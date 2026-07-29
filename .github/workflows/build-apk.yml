@@ -1,7 +1,7 @@
 name: Build APK
 
 on:
-  workflow_dispatch: # اجازه می‌دهد که تو دستی دکمه Run را بزنی
+  workflow_dispatch:
 
 jobs:
   build:
@@ -19,7 +19,8 @@ jobs:
     - name: Install System Dependencies
       run: |
         sudo apt update
-        sudo apt install -y git zip unzip openjdk-17-jdk python3-pip autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo5 cmake libffi-dev libssl-dev libsqlite3-dev libbz2-dev libreadline-dev liblzma-dev
+        # حذف libtinfo5 و اضافه کردن libtinfo6 که در نسخه های جدید هست
+        sudo apt install -y git zip unzip openjdk-17-jdk python3-pip autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo6 cmake libffi-dev libssl-dev libsqlite3-dev libbz2-dev libreadline-dev liblzma-dev
         pip3 install --upgrade pip
         pip3 install buildozer cython
 
@@ -35,12 +36,11 @@ jobs:
 
     - name: Build with Buildozer
       run: |
-        # استفاده از yes برای تایید خودکار تمام سوالات buildozer
         yes | buildozer android debug
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
-      if: always() # حتی اگر بیلد با خطا مواجه شد، تلاش کن فایل‌ها را ذخیره کنی
+      if: always()
       with:
         name: my-app-apk
         path: bin/*.apk

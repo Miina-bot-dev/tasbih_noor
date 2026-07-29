@@ -1,21 +1,20 @@
-name: Build APK
+[app]
+title = Zekr App
+package.name = zekr_app
+package.domain = ir.yourname.zekr
+source.dir = .
+source.include_exts = py,png,jpg,ttf,json
+version = 1.0.0
+requirements = python3,kivy,arabic_reshaper,python-bidi
+orientation = portrait
+android.permissions = INTERNET
+android.api = 33
+android.minapi = 21
+android.ndk = 25b
+android.archs = arm64-v8a
+android.accept_sdk_license = True
+android.skip_update = False
 
-on: workflow_dispatch
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Build with Buildozer
-        uses: ArtemSBulgakov/buildozer-action@v1
-        with:
-          workdir: .                    # اگه کدت روت ریپو هست
-          buildozer_version: stable
-
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: apk
-          path: bin/*.apk
+[buildozer]
+log_level = 2
+warn_on_root = 0

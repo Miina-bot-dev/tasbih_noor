@@ -1,32 +1,46 @@
 name: Build APK
 
 on:
-  workflow_dispatch:
+  workflow_dispatch: # اجازه می‌دهد که تو دستی دکمه Run را بزنی
 
 jobs:
   build:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
     
     - name: Setup Python
       uses: actions/setup-python@v5
       with:
         python-version: '3.10'
-    
-    - name: Install dependencies
+
+    - name: Install System Dependencies
       run: |
         sudo apt update
-        sudo apt install -y git zip unzip openjdk-17-jdk python3-pip autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo5 cmake libffi-dev libssl-dev
+        sudo apt install -y git zip unzip openjdk-17-jdk python3-pip autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo5 cmake libffi-dev libssl-dev libsqlite3-dev libbz2-dev libreadline-dev liblzma-dev
+        pip3 install --upgrade pip
         pip3 install buildozer cython
-    
-    - name: Build APK
-      run: |
-        yes | buildozer android debug
-    
-    - name: Upload APK
-      uses: actions/upload-artifact@v4
+
+    - name: Cache Buildozer (To save time)
+      uses: actions/cache@v3
       with:
-        name: apk
+        path: |
+          ~/.buildozer
+          ~/.gradle
+        key: ${{ runner.os }}-buildozer-${{ hashFiles('**/buildozer.spec') }}
+        restore-keys: |
+          ${{ runner.os }}-buildozer-
+
+    - name: Build with Buildozer
+      run: |
+        # استفاده از yes برای تایید خودکار تمام سوالات buildozer
+        yes | buildozer android debug
+
+    - name: Upload APK Artifact
+      uses: actions/upload-artifact@v4
+      if: always() # حتی اگر بیلد با خطا مواجه شد، تلاش کن فایل‌ها را ذخیره کنی
+      with:
+        name: my-app-apk
         path: bin/*.apk

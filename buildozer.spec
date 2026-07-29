@@ -1,32 +1,27 @@
-name: Build APK
+[app]
+source.dir = .
 
-on:
-  workflow_dispatch:
+title = ذکر شمار حرفه‌ای
+package.name = zekr_app
+package.domain = ir.yourname.zekr
 
-jobs:
-  build:
-    runs-on: ubuntu-22.04
-    
-    steps:
-    - uses: actions/checkout@v4
-    
-    - name: Setup Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.10'
-    
-    - name: Install dependencies
-      run: |
-        sudo apt update
-        sudo apt install -y git zip unzip openjdk-17-jdk python3-pip autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo5 cmake libffi-dev libssl-dev
-        pip3 install buildozer cython
-    
-    - name: Build APK
-      run: |
-        buildozer android debug
-    
-    - name: Upload APK
-      uses: actions/upload-artifact@v4
-      with:
-        name: apk
-        path: bin/*.apk
+source.include_exts = py,png,jpg,ttf,json
+source.include_patterns = assets/*,images/*
+
+version = 1.0.0
+
+requirements = python3,kivy,arabic_reshaper,python-bidi
+
+orientation = portrait
+
+android.permissions = INTERNET
+android.api = 33
+android.minapi = 21
+android.sdk = 33
+android.ndk = 25b
+android.archs = arm64-v8a, armeabi-v7a
+android.allow_backup = True
+
+[buildozer]
+log_level = 2
+warn_on_root = 1

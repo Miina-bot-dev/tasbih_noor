@@ -49,19 +49,18 @@ jobs:
         pip3 install buildozer cython
 
     - name: Cache Buildozer (Crucial for speed)
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: |
           ~/.buildozer
           ~/.gradle
-        key: ${{ runner.os }}-buildozer-${{ hashFiles('**/buildozer.spec') }}
+        key: ${{ runner.os }}-buildozer-v2-${{ hashFiles('**/buildozer.spec') }}
         restore-keys: |
-          ${{ runner.os }}-buildozer-
+          ${{ runner.os }}-buildozer-v2-
 
     - name: Build with Buildozer
-      run: |
-        # این دستور باعث می‌شود تمام سوالات Buildozer به صورت خودکار "بله" دریافت شوند
-        yes | buildozer android debug
+      # ✅ دیگه نیازی به yes | نیست چون لایسنس توی spec قبول شده
+      run: buildozer android debug
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4

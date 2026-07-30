@@ -32,15 +32,13 @@ jobs:
           pip install --upgrade pip
           pip install buildozer cython
 
-      - name: Clean everything (CRITICAL)
+      - name: Clean everything
         run: |
-          echo "=== Cleaning all caches ==="
           rm -rf ~/.buildozer
           rm -rf .buildozer
           rm -rf bin
           rm -rf ~/.gradle
           buildozer android distclean 2>/dev/null || true
-          echo "=== Clean done ==="
 
       - name: Build APK
         env:

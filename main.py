@@ -16,6 +16,9 @@ from kivy.uix.scrollview import ScrollView
 from kivy.uix.textinput import TextInput
 from kivy.uix.progressbar import ProgressBar
 
+# --------------------------
+# تنظیمات پایه
+# --------------------------
 Window.clearcolor = (0.02, 0.02, 0.08, 1)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -80,8 +83,8 @@ def save_data(data):
             os.makedirs(d, exist_ok=True)
         with open(path, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
-    except Exception as e:
-        print("Save error:", e)
+    except:
+        pass
 
 WEEKLY_ZEKR = {
     5: "یا رَبَّ الْعالَمین",
@@ -93,11 +96,26 @@ WEEKLY_ZEKR = {
     4: "اَللّهُمَّ صَلِّ عَلی مُحَمَّد وَ آلِ مُحَمَّد",
 }
 
+# ترتیب روزهای هفته برای نمایش صحیح
+WEEKDAY_NAMES = {
+    0: "شنبه",
+    1: "یکشنبه", 
+    2: "دوشنبه",
+    3: "سه‌شنبه",
+    4: "چهارشنبه",
+    5: "پنجشنبه",
+    6: "جمعه",
+}
+
 ZEKR_FOLDERS = {
     "رزق و روزی": ["یا رزاق", "یا غنی", "یا واسع", "یا فتاح", "استغفرالله"],
     "گشایش مشکلات": ["یا فتاح", "یا کاشف الکرب", "یا مجیب", "یا قاضی الحاجات"],
     "آرامش قلب": ["یا سلام", "یا لطیف", "یا صبور", "یا نور", "یا رؤوف"],
 }
+
+# --------------------------
+# کامپوننت‌ها
+# --------------------------
 
 class FaLabel(Label):
     def __init__(self, text="", **kwargs):
@@ -123,6 +141,10 @@ class StyledBtn(Button):
         self.height = dp(50)
         self.color = (1, 1, 1, 1)
 
+# --------------------------
+# اپلیکیشن اصلی
+# --------------------------
+
 class ZekrApp(App):
     def build(self):
         self.data = load_data()
@@ -130,34 +152,46 @@ class ZekrApp(App):
         root = BoxLayout(orientation='vertical', padding=dp(16), spacing=dp(12))
         
         # === هدر ===
-        header = BoxLayout(orientation='vertical', size_hint_y=None, height=dp(85), spacing=dp(4))
+        header = BoxLayout(orientation='vertical', size_hint_y=None, height=dp(90), spacing=dp(4))
+        
         self.lbl_time = FaLabel(text="00:00:00", font_size='38sp', color=(1, 0.9, 0.4, 1), bold=True)
         header.add_widget(self.lbl_time)
         
-        row = BoxLayout(orientation='horizontal', size_hint_y=None, height=dp(24))
-        self.lbl_date = FaLabel(text="", font_size='12sp', color=(0.7, 0.75, 0.9, 1), halign='left')
+        row = BoxLayout(orientation='horizontal', size_hint_y=None, height=dp(26))
+        self.lbl_date = FaLabel(text="", font_size='13sp', color=(0.7, 0.75, 0.9, 1), halign='left')
         self.lbl_week = FaLabel(text="", font_size='14sp', color=(0.9, 0.75, 0.95, 1), halign='right')
         row.add_widget(self.lbl_date)
         row.add_widget(self.lbl_week)
         header.add_widget(row)
+        
         root.add_widget(header)
         
-        # === شمارنده طلایی بزرگ (بدون Canvas) ===
+        # === شمارنده بزرگ (فقط Label ساده — بدون Canvas، بدون FloatLayout) ===
+        counter_box = BoxLayout(orientation='vertical', size_hint_y=None, height=dp(120), spacing=dp(4))
+        
         self.lbl_count = FaLabel(
             text="۰",
             font_size='85sp',
-            color=(1, 0.85, 0.15, 1),
+            color=(0.35, 0.75, 1, 1),
             bold=True,
             size_hint_y=None,
             height=dp(100)
         )
-        root.add_widget(self.lbl_count)
+        counter_box.add_widget(self.lbl_count)
+        
+        root.add_widget(counter_box)
         
         # === نوار پیشرفت ===
         self.progress = ProgressBar(max=100, value=0, size_hint_y=None, height=dp(8))
         root.add_widget(self.progress)
         
-        self.lbl_target = FaLabel(text="هدف: ۱۰۰", font_size='13sp', color=(0.7, 0.75, 0.85, 1), size_hint_y=None, height=dp(24))
+        self.lbl_target = FaLabel(
+            text="هدف: ۱۰۰",
+            font_size='13sp',
+            color=(0.7, 0.75, 0.85, 1),
+            size_hint_y=None,
+            height=dp(24)
+        )
         root.add_widget(self.lbl_target)
         
         # === دکمه‌ها ===
@@ -194,21 +228,30 @@ class ZekrApp(App):
         try:
             now = datetime.now()
             self.lbl_time.set_fa(to_fa_num(now.strftime("%H:%M:%S")))
-            self.lbl_date.set_fa(to_fa_num(now.strftime("%Y/%m/%d")))
-            self.lbl_week.set_fa(WEEKLY_ZEKR.get(now.weekday(), "ذکر روز"))
-        except:
-            pass
+            
+            # تاریخ شمسی نمایش داده نمی‌شه، پس میلادی با فرمت فارسی
+            date_str = now.strftime("%Y/%m/%d")
+            weekday = now.weekday()
+            weekday_name = WEEKDAY_NAMES.get(weekday, "")
+            self.lbl_date.set_fa(to_fa_num(date_str) + " | " + weekday_name)
+            
+            self.lbl_week.set_fa(WEEKLY_ZEKR.get(weekday, "ذکر روز"))
+        except Exception as e:
+            print("Time update error:", e)
     
     def update_ui(self):
         try:
             c = self.data.get("count", 0)
+            if not isinstance(c, int):
+                c = 0
+                self.data["count"] = 0
             t = self.data.get("daily_target", 100)
             self.lbl_count.set_fa(to_fa_num(c))
             self.lbl_target.set_fa(f"هدف: {to_fa_num(t)}")
             self.progress.max = t
             self.progress.value = min(c, t)
-        except:
-            pass
+        except Exception as e:
+            print("UI update error:", e)
     
     def add_zekr(self, *args):
         try:
@@ -305,7 +348,13 @@ class ZekrApp(App):
             box.bind(minimum_height=box.setter('height'))
             
             for zekr in ZEKR_FOLDERS[name]:
-                lbl = FaLabel(zekr, font_size='18sp', color=(0.9, 0.85, 0.95, 1), size_hint_y=None, height=dp(48))
+                lbl = FaLabel(
+                    zekr,
+                    font_size='18sp',
+                    color=(0.9, 0.85, 0.95, 1),
+                    size_hint_y=None,
+                    height=dp(48)
+                )
                 box.add_widget(lbl)
             
             scroll.add_widget(box)

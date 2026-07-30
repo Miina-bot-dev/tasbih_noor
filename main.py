@@ -1,16 +1,10 @@
 # -*- coding: utf-8 -*-
-from kivy.uix.image import Image
-from kivy.uix.floatlayout import FloatLayout
 import os
 import json
 from datetime import datetime
-import arabic_reshaper
-from bidi.algorithm import get_display
 from kivy.app import App
 from kivy.clock import Clock
-from kivy.core.text import LabelBase
 from kivy.core.window import Window
-from kivy.graphics import Color, RoundedRectangle
 from kivy.metrics import dp
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
@@ -19,56 +13,63 @@ from kivy.uix.label import Label
 from kivy.uix.popup import Popup
 from kivy.uix.scrollview import ScrollView
 from kivy.uix.textinput import TextInput
-from kivy.uix.progressbar import ProgressBar
-from kivy.uix.widget import Widget
 
 # --------------------------
-# تنظیمات استایل حرفه‌ای
+# تنظیمات پایه
 # --------------------------
-Window.clearcolor = (0.05, 0.06, 0.1, 1)
+Window.clearcolor = (0.05, 0.06, 0.12, 1)
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DATA_FILE = os.path.join(BASE_DIR, "zekr_data.json")
-FONT_FILE = os.path.join(BASE_DIR, "Vazirmatn-Regular.ttf")
-
-# فونت: اگه فایل بود ثبت کن، اگه نبود از فونت سیستمی استفاده کن
-if os.path.exists(FONT_FILE):
-    try:
-        LabelBase.register(name="Vazir", fn_regular=FONT_FILE)
-        FONT_NAME = "Vazir"
-    except Exception:
-        FONT_NAME = None
-else:
-    FONT_NAME = None
+try:
+    import arabic_reshaper
+    from bidi.algorithm import get_display
+    HAS_ARABIC = True
+except Exception:
+    HAS_ARABIC = False
 
 FA_DIGITS = str.maketrans("0123456789", "۰۱۲۳۴۵۶۷۸۹")
 
 def fa(text):
     if text is None:
         return ""
-    try:
-        return get_display(arabic_reshaper.reshape(str(text)))
-    except:
-        return str(text)
+    txt = str(text)
+    if HAS_ARABIC:
+        try:
+            return get_display(arabic_reshaper.reshape(txt))
+        except:
+            return txt
+    return txt
 
 def to_fa_num(s):
     return str(s).translate(FA_DIGITS)
 
+def get_data_path():
+    """مسیر امن برای ذخیره داده در اندروید"""
+    try:
+        app = App.get_running_app()
+        if app:
+            return os.path.join(app.user_data_dir, "zekr_data.json")
+    except:
+        pass
+    return os.path.join(os.path.dirname(os.path.abspath(__file__)), "zekr_data.json")
+
 def load_data():
-    if os.path.exists(DATA_FILE):
+    path = get_data_path()
+    if os.path.exists(path):
         try:
-            with open(DATA_FILE, "r", encoding="utf-8") as f:
+            with open(path, "r", encoding="utf-8") as f:
                 return json.load(f)
         except:
             pass
-    return {"count": 0, "daily_target": 100, "paid": False}
+    return {"count": 0, "daily_target": 100}
 
 def save_data(data):
     try:
-        with open(DATA_FILE, "w", encoding="utf-8") as f:
+        path = get_data_path()
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
-    except:
-        pass
+    except Exception as e:
+        print("Save error:", e)
 
 WEEKLY_ZEKR = {
     5: "یا رَبَّ الْعالَمین",
@@ -86,226 +87,182 @@ ZEKR_FOLDERS = {
     "آرامش قلب": ["یا سلام", "یا لطیف", "یا صبور", "یا نور", "یا رؤوف"],
 }
 
-class GlassCard(BoxLayout):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.orientation = "vertical"
-        self.padding = [dp(20), dp(5), dp(20), dp(20)]
-        self.spacing = dp(10)
-        self.size_hint_y = None
-        self.bind(minimum_height=self.setter("height"))
-        with self.canvas.before:
-            Color(0.12, 0.14, 0.22, 0.8)
-            self.bg = RoundedRectangle(radius=[25])
-        self.bind(pos=self._update_bg, size=self._update_bg)
-
-    def _update_bg(self, *args):
-        self.bg.pos = self.pos
-        self.bg.size = self.size
-
-class ModernBtn(Button):
-    def __init__(self, text="", bg_color=(0.2, 0.4, 0.9, 1), **kwargs):
+class FaLabel(Label):
+    def __init__(self, text="", **kwargs):
+        kwargs.setdefault('font_size', '18sp')
+        kwargs.setdefault('color', (1, 1, 1, 1))
         super().__init__(**kwargs)
         self.text = fa(text)
-        self.font_name = FONT_NAME
-        self.background_normal = ""
-        self.background_color = (0, 0, 0, 0)
+        self.halign = 'center'
+        self.valign = 'middle'
+        self.bind(size=self._update)
+    
+    def _update(self, *args):
+        self.text_size = (self.width, None)
+    
+    def set_fa(self, text):
+        self.text = fa(text)
+
+class StyledBtn(Button):
+    def __init__(self, text="", bg_color=(0.2, 0.5, 0.9, 1), **kwargs):
+        super().__init__(**kwargs)
+        self.text = fa(text)
+        self.background_normal = ''
+        self.background_color = bg_color
         self.bold = True
-        self.font_size = "17sp"
+        self.font_size = '17sp'
         self.size_hint_y = None
         self.height = dp(50)
-        self.my_color = bg_color
-        with self.canvas.before:
-            Color(*self.my_color)
-            self.rect = RoundedRectangle(radius=[25])
-        self.bind(pos=self._update_rect, size=self._update_rect)
-
-    def _update_rect(self, *args):
-        self.rect.pos = self.pos
-        self.rect.size = self.size
-
-    def set_fa(self, text):
-        self.text = fa(text)
-
-class FaLabel(Label):
-    def __init__(self, text="", font_size="16sp", color=(1,1,1,1), bold=False, halign="center", **kwargs):
-        super().__init__(**kwargs)
-        self.font_name = FONT_NAME
-        self.text = fa(text)
-        self.font_size = font_size
-        self.color = color
-        self.bold = bold
-        self.halign = halign
-        self.valign = "middle"
-        self.bind(size=self._update_text_size)
-
-    def _update_text_size(self, *args):
-        self.text_size = (self.width, None)
-
-    def set_fa(self, text):
-        self.text = fa(text)
+        self.color = (1, 1, 1, 1)
 
 class ZekrApp(App):
     def build(self):
         self.data = load_data()
-        root = FloatLayout()
-
-        # پس‌زمینه ساده بدون عکس (صددرصد بدون خطا)
-        with root.canvas.before:
-            Color(0.05, 0.06, 0.15, 1)
-            root.bg_rect = RoundedRectangle(size=root.size, pos=root.pos)
-        root.bind(size=lambda obj, val: setattr(root.bg_rect, 'size', val))
-        root.bind(pos=lambda obj, val: setattr(root.bg_rect, 'pos', val))
-
-        # محتوای اسکرول‌شونده
-        self.scroll = ScrollView(do_scroll_x=False)
-        self.main_layout = BoxLayout(
-            orientation="vertical",
-            spacing=dp(15),
-            padding=[dp(20), dp(70), dp(20), dp(40)],
-            size_hint_y=None
-        )
-        self.main_layout.bind(minimum_height=self.main_layout.setter("height"))
-
+        
+        root = BoxLayout(orientation='vertical', padding=dp(15), spacing=dp(10))
+        
         # ساعت
-        self.lbl_time = FaLabel(text="00:00:00", font_size="45sp", color=(1, 0.84, 0, 1), bold=True, halign="left")
-        self.main_layout.add_widget(self.lbl_time)
-
-        # تاریخ و ذکر
-        info_row = BoxLayout(orientation="horizontal", size_hint_y=None, height=dp(30))
-        self.lbl_date = FaLabel(text="", font_size="14sp", halign="left", color=(0.8, 0.8, 0.8, 1))
-        self.lbl_week_zekr = FaLabel(text="", font_size="17sp", halign="right", color=(1, 0.9, 0.6, 1), bold=True)
-        info_row.add_widget(self.lbl_date)
-        info_row.add_widget(self.lbl_week_zekr)
-        self.main_layout.add_widget(info_row)
-
+        self.lbl_time = FaLabel(text="00:00:00", font_size='40sp', color=(1, 0.85, 0.2, 1))
+        root.add_widget(self.lbl_time)
+        
+        # تاریخ و ذکر هفته
+        info_box = BoxLayout(orientation='horizontal', size_hint_y=None, height=dp(30))
+        self.lbl_date = FaLabel(text="", font_size='13sp', color=(0.8, 0.8, 0.8, 1))
+        self.lbl_week = FaLabel(text="", font_size='15sp', color=(1, 0.9, 0.6, 1))
+        info_box.add_widget(self.lbl_date)
+        info_box.add_widget(self.lbl_week)
+        root.add_widget(info_box)
+        
         # کارت شمارنده
-        card = GlassCard()
-        self.lbl_count = FaLabel(text="۰", font_size="85sp", bold=True)
-        self.progress = ProgressBar(max=100, size_hint_y=None, height=dp(15))
-        self.lbl_target_info = FaLabel(text="هدف: ۱۰۰", font_size="14sp")
-
+        card = BoxLayout(orientation='vertical', padding=dp(20), spacing=dp(10), 
+                         size_hint_y=None, height=dp(250))
+        card.background_color = (0.12, 0.14, 0.22, 1)
+        
+        self.lbl_count = FaLabel(text="۰", font_size='70sp', color=(0.3, 0.7, 1, 1))
         card.add_widget(self.lbl_count)
-        card.add_widget(self.progress)
-        card.add_widget(self.lbl_target_info)
-
+        
+        self.lbl_target = FaLabel(text="هدف: ۱۰۰", font_size='14sp', color=(0.7, 0.7, 0.7, 1))
+        card.add_widget(self.lbl_target)
+        
         # دکمه‌ها
-        btns_grid = GridLayout(cols=2, spacing=dp(10), size_hint_y=None, height=dp(55))
-        btn_add = ModernBtn(text="+ ذکر", bg_color=(0.1, 0.5, 0.9, 0.9))
+        btns = GridLayout(cols=2, spacing=dp(10), size_hint_y=None, height=dp(110))
+        
+        btn_add = StyledBtn("+ ذکر", bg_color=(0.1, 0.5, 0.9, 1))
         btn_add.bind(on_press=self.add_zekr)
-        btn_sub = ModernBtn(text="- کم کردن", bg_color=(0.3, 0.3, 0.35, 0.8))
+        
+        btn_sub = StyledBtn("- کم کردن", bg_color=(0.35, 0.35, 0.4, 1))
         btn_sub.bind(on_press=self.remove_zekr)
-        btns_grid.add_widget(btn_add)
-        btns_grid.add_widget(btn_sub)
-        card.add_widget(btns_grid)
-
-        btns_bottom = GridLayout(cols=2, spacing=dp(10), size_hint_y=None, height=dp(55))
-        btn_reset = ModernBtn(text="ریست", bg_color=(0.6, 0.2, 0.2, 0.8))
+        
+        btn_reset = StyledBtn("ریست", bg_color=(0.7, 0.2, 0.2, 1))
         btn_reset.bind(on_press=self.reset_counter)
-        btn_target = ModernBtn(text="تنظیم هدف", bg_color=(0.2, 0.4, 0.3, 0.8))
+        
+        btn_target = StyledBtn("تنظیم هدف", bg_color=(0.2, 0.5, 0.3, 1))
         btn_target.bind(on_press=self.set_target_popup)
-        btns_bottom.add_widget(btn_reset)
-        btns_bottom.add_widget(btn_target)
-        card.add_widget(btns_bottom)
-
-        self.main_layout.add_widget(card)
-
+        
+        btns.add_widget(btn_add)
+        btns.add_widget(btn_sub)
+        btns.add_widget(btn_reset)
+        btns.add_widget(btn_target)
+        card.add_widget(btns)
+        
+        root.add_widget(card)
+        
         # بانک اذکار
-        btn_list = ModernBtn(text="بانک اذکار مشکل‌گشا", bg_color=(0.4, 0.1, 0.6, 0.9))
+        btn_list = StyledBtn("بانک اذکار مشکل‌گشا", bg_color=(0.5, 0.15, 0.7, 1))
         btn_list.bind(on_press=self.open_zekr_list)
-        self.main_layout.add_widget(btn_list)
-
-        self.scroll.add_widget(self.main_layout)
-        root.add_widget(self.scroll)
-
-        Clock.schedule_interval(self.update_live_data, 1)
+        root.add_widget(btn_list)
+        
+        # آپدیت زمان
+        Clock.schedule_interval(self.update_time, 1)
         self.update_ui()
+        
         return root
-
-    def update_live_data(self, *args):
+    
+    def update_time(self, *args):
         now = datetime.now()
         self.lbl_time.set_fa(to_fa_num(now.strftime("%H:%M:%S")))
         self.lbl_date.set_fa(to_fa_num(now.strftime("%Y/%m/%d")))
-        wd = now.weekday()
-        self.lbl_week_zekr.set_fa(WEEKLY_ZEKR.get(wd, "ذکر روز"))
-
+        self.lbl_week.set_fa(WEEKLY_ZEKR.get(now.weekday(), "ذکر روز"))
+    
     def update_ui(self):
-        count = self.data.get("count", 0)
-        target = self.data.get("daily_target", 100)
-        self.lbl_count.set_fa(to_fa_num(count))
-        self.lbl_target_info.set_fa(f"هدف: {to_fa_num(target)}")
-        self.progress.max = target
-        self.progress.value = min(count, target)
-
+        c = self.data.get("count", 0)
+        t = self.data.get("daily_target", 100)
+        self.lbl_count.set_fa(to_fa_num(c))
+        self.lbl_target.set_fa(f"هدف: {to_fa_num(t)}")
+    
     def add_zekr(self, *args):
-        self.data["count"] += 1
+        self.data["count"] = self.data.get("count", 0) + 1
         save_data(self.data)
         self.update_ui()
-
+    
     def remove_zekr(self, *args):
-        if self.data["count"] > 0:
+        if self.data.get("count", 0) > 0:
             self.data["count"] -= 1
             save_data(self.data)
             self.update_ui()
-
+    
     def reset_counter(self, *args):
         self.data["count"] = 0
         save_data(self.data)
         self.update_ui()
-
+    
     def set_target_popup(self, *args):
-        box = BoxLayout(orientation="vertical", spacing=dp(15), padding=dp(20))
-        inp = TextInput(
-            text=str(self.data["daily_target"]),
-            multiline=False,
-            input_filter="int",
-            font_name=FONT_NAME if FONT_NAME else "Roboto",
-            font_size="20sp"
-        )
-        btn = ModernBtn(text="تایید", bg_color=(0.1, 0.6, 0.4, 1))
-        popup = Popup(title=fa("هدف جدید"), content=box, size_hint=(0.8, 0.4))
+        box = BoxLayout(orientation='vertical', padding=dp(20), spacing=dp(15))
+        inp = TextInput(text=str(self.data.get("daily_target", 100)), 
+                       multiline=False, input_filter='int', font_size='20sp')
+        btn_ok = StyledBtn("تایید", bg_color=(0.1, 0.6, 0.4, 1))
+        popup = Popup(title=fa("هدف جدید"), content=box, size_hint=(0.85, 0.35))
         box.add_widget(inp)
-        box.add_widget(btn)
-        btn.bind(on_press=lambda x: self.confirm_target(inp.text, popup))
+        box.add_widget(btn_ok)
+        btn_ok.bind(on_press=lambda x: self._set_target(inp.text, popup))
         popup.open()
-
-    def confirm_target(self, val, popup):
-        self.data["daily_target"] = int(val) if val else 100
+    
+    def _set_target(self, val, popup):
+        try:
+            self.data["daily_target"] = int(val) if val else 100
+        except:
+            self.data["daily_target"] = 100
         save_data(self.data)
         self.update_ui()
         popup.dismiss()
-
+    
     def open_zekr_list(self, *args):
-        content = BoxLayout(orientation="vertical", padding=dp(10), spacing=dp(10))
+        content = BoxLayout(orientation='vertical', padding=dp(10), spacing=dp(10))
         scroll = ScrollView()
-        main_box = BoxLayout(orientation="vertical", size_hint_y=None, spacing=dp(10))
-        main_box.bind(minimum_height=main_box.setter("height"))
-        for folder_name in ZEKR_FOLDERS.keys():
-            btn = ModernBtn(text=folder_name, bg_color=(0.18, 0.22, 0.32, 1))
-            btn.bind(on_press=lambda x, n=folder_name: self.show_folder_content(n))
-            main_box.add_widget(btn)
-        scroll.add_widget(main_box)
+        box = BoxLayout(orientation='vertical', size_hint_y=None, spacing=dp(8))
+        box.bind(minimum_height=box.setter('height'))
+        
+        for name in ZEKR_FOLDERS.keys():
+            btn = StyledBtn(name, bg_color=(0.18, 0.22, 0.35, 1))
+            btn.bind(on_press=lambda x, n=name: self.show_zekrs(n))
+            box.add_widget(btn)
+        
+        scroll.add_widget(box)
         content.add_widget(scroll)
-        close = ModernBtn(text="بستن", bg_color=(0.3, 0.25, 0.35, 1))
+        
+        btn_close = StyledBtn("بستن", bg_color=(0.3, 0.25, 0.4, 1))
         popup = Popup(title=fa("بانک اذکار"), content=content, size_hint=(0.9, 0.8))
-        close.bind(on_press=popup.dismiss)
-        content.add_widget(close)
+        btn_close.bind(on_press=popup.dismiss)
+        content.add_widget(btn_close)
         popup.open()
-
-    def show_folder_content(self, name):
-        inner = BoxLayout(orientation="vertical", padding=dp(10), spacing=dp(10))
+    
+    def show_zekrs(self, name):
+        inner = BoxLayout(orientation='vertical', padding=dp(10), spacing=dp(10))
         scroll = ScrollView()
-        items_box = BoxLayout(orientation="vertical", size_hint_y=None, spacing=dp(8))
-        items_box.bind(minimum_height=items_box.setter("height"))
+        box = BoxLayout(orientation='vertical', size_hint_y=None, spacing=dp(8))
+        box.bind(minimum_height=box.setter('height'))
+        
         for zekr in ZEKR_FOLDERS[name]:
-            items_box.add_widget(ModernBtn(text=zekr, bg_color=(0.12, 0.16, 0.24, 1)))
-        scroll.add_widget(items_box)
+            box.add_widget(StyledBtn(zekr, bg_color=(0.1, 0.15, 0.25, 1)))
+        
+        scroll.add_widget(box)
         inner.add_widget(scroll)
-        close = ModernBtn(text="برگشت", bg_color=(0.3, 0.3, 0.35, 1))
+        
+        btn_back = StyledBtn("برگشت", bg_color=(0.3, 0.3, 0.4, 1))
         popup = Popup(title=fa(name), content=inner, size_hint=(0.9, 0.8))
-        close.bind(on_press=popup.dismiss)
-        inner.add_widget(close)
+        btn_back.bind(on_press=popup.dismiss)
+        inner.add_widget(btn_back)
         popup.open()
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     ZekrApp().run()

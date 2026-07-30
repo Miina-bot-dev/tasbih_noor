@@ -16,6 +16,7 @@ from kivy.uix.scrollview import ScrollView
 from kivy.uix.textinput import TextInput
 from kivy.uix.progressbar import ProgressBar
 
+# پس‌زمینه آبی-بنفش تیره
 Window.clearcolor = (0.02, 0.02, 0.08, 1)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -53,6 +54,7 @@ def fa(text):
 def to_fa_num(s):
     return str(s).translate(FA_DIGITS)
 
+# تبدیل میلادی به شمسی
 def miladi_to_shamsi(gy, gm, gd):
     g_d_m = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334]
     gy2 = gy + 1 if gm > 2 else gy
@@ -156,10 +158,12 @@ class ZekrApp(App):
     def build(self):
         self.data = load_data()
         
+        # padding بالا کم = محتوا میاد بالاتر
         root = BoxLayout(orientation='vertical', padding=[dp(16), dp(4), dp(16), dp(16)], spacing=dp(10))
         
-        # هدر
+        # === هدر ===
         header = BoxLayout(orientation='vertical', size_hint_y=None, height=dp(88), spacing=dp(4))
+        
         self.lbl_time = FaLabel(text="00:00:00", font_size='38sp', color=(1, 0.9, 0.4, 1), bold=True)
         header.add_widget(self.lbl_time)
         
@@ -169,10 +173,12 @@ class ZekrApp(App):
         row.add_widget(self.lbl_date)
         row.add_widget(self.lbl_week)
         header.add_widget(row)
+        
         root.add_widget(header)
         
-        # شمارنده بزرگ
+        # === شمارنده بزرگ آبی ===
         counter_box = BoxLayout(orientation='vertical', size_hint_y=None, height=dp(115), spacing=dp(4))
+        
         self.lbl_count = FaLabel(
             text="۰",
             font_size='85sp',
@@ -182,9 +188,10 @@ class ZekrApp(App):
             height=dp(100)
         )
         counter_box.add_widget(self.lbl_count)
+        
         root.add_widget(counter_box)
         
-        # نوار پیشرفت
+        # === نوار پیشرفت ===
         self.progress = ProgressBar(max=100, value=0, size_hint_y=None, height=dp(8))
         root.add_widget(self.progress)
         
@@ -197,7 +204,7 @@ class ZekrApp(App):
         )
         root.add_widget(self.lbl_target)
         
-        # دکمه‌ها
+        # === دکمه‌ها ===
         grid = GridLayout(cols=2, spacing=dp(10), size_hint_y=None, height=dp(110))
         
         btn_add = StyledBtn("+ ذکر", bg_color=(0.1, 0.5, 0.95, 1))
@@ -218,7 +225,7 @@ class ZekrApp(App):
         grid.add_widget(btn_target)
         root.add_widget(grid)
         
-        # بانک اذکار
+        # === دکمه بانک اذکار ===
         btn_list = StyledBtn("🕌 بانک اذکار مشکل‌گشا", bg_color=(0.5, 0.2, 0.7, 1), font_size='18sp')
         btn_list.bind(on_press=self.open_zekr_list)
         root.add_widget(btn_list)
@@ -232,6 +239,7 @@ class ZekrApp(App):
             now = datetime.now()
             self.lbl_time.set_fa(to_fa_num(now.strftime("%H:%M:%S")))
             
+            # تاریخ شمسی
             jy, jm, jd = miladi_to_shamsi(now.year, now.month, now.day)
             shamsi_str = f"{jy}/{jm:02d}/{jd:02d}"
             

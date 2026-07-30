@@ -8,6 +8,7 @@ from kivy.core.text import LabelBase
 from kivy.core.window import Window
 from kivy.metrics import dp
 from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.button import Button
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.label import Label
@@ -15,12 +16,13 @@ from kivy.uix.popup import Popup
 from kivy.uix.scrollview import ScrollView
 from kivy.uix.textinput import TextInput
 from kivy.uix.progressbar import ProgressBar
-from kivy.graphics import Color, RoundedRectangle
+from kivy.uix.widget import Widget
+from kivy.graphics import Color, Ellipse
 
 # --------------------------
 # تنظیمات پایه
 # --------------------------
-Window.clearcolor = (0.03, 0.03, 0.08, 1)
+Window.clearcolor = (0.02, 0.02, 0.08, 1)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 FONT_FILE = os.path.join(BASE_DIR, "Vazirmatn-Regular.ttf")
@@ -79,7 +81,9 @@ def load_data():
 def save_data(data):
     try:
         path = get_data_path()
-        os.makedirs(os.path.dirname(path), exist_ok=True)
+        d = os.path.dirname(path)
+        if d:
+            os.makedirs(d, exist_ok=True)
         with open(path, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
     except:
@@ -112,31 +116,24 @@ class FaLabel(Label):
         self.text = fa(text)
         self.halign = 'center'
         self.valign = 'middle'
-        self.bind(size=self._update)
-    
-    def _update(self, *args):
-        self.text_size = (self.width, None)
     
     def set_fa(self, text):
         self.text = fa(text)
 
-class Card(BoxLayout):
-    """کارت با گوشه‌های گرد"""
+class CircleCounter(FloatLayout):
+    """دایره طلایی شمارنده"""
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.orientation = 'vertical'
-        self.padding = dp(20)
-        self.spacing = dp(12)
-        self.size_hint_y = None
-        self.bind(minimum_height=self.setter('height'))
+        self.size_hint = (None, None)
+        self.size = (dp(140), dp(140))
         with self.canvas.before:
-            Color(0.12, 0.15, 0.25, 0.92)
-            self.bg = RoundedRectangle(radius=[dp(20)])
+            Color(0.95, 0.75, 0.15, 1)
+            self.ellipse = Ellipse(pos=self.pos, size=self.size)
         self.bind(pos=self._update, size=self._update)
     
     def _update(self, *args):
-        self.bg.pos = self.pos
-        self.bg.size = self.size
+        self.ellipse.pos = self.pos
+        self.ellipse.size = self.size
 
 class StyledBtn(Button):
     def __init__(self, text="", bg_color=(0.15, 0.45, 0.9, 1), **kwargs):
@@ -159,29 +156,29 @@ class ZekrApp(App):
     def build(self):
         self.data = load_data()
         
-        root = BoxLayout(orientation='vertical', padding=dp(16), spacing=dp(14))
+        root = BoxLayout(orientation='vertical', padding=dp(16), spacing=dp(12))
         
         # === هدر ===
-        header = BoxLayout(orientation='vertical', size_hint_y=None, height=dp(100), spacing=dp(4))
+        header = BoxLayout(orientation='vertical', size_hint_y=None, height=dp(85), spacing=dp(4))
         
         self.lbl_time = FaLabel(
             text="00:00:00", 
-            font_size='44sp', 
+            font_size='38sp', 
             color=(1, 0.9, 0.4, 1), 
             bold=True
         )
         header.add_widget(self.lbl_time)
         
-        row = BoxLayout(orientation='horizontal', size_hint_y=None, height=dp(26))
+        row = BoxLayout(orientation='horizontal', size_hint_y=None, height=dp(24))
         self.lbl_date = FaLabel(
             text="", 
-            font_size='13sp', 
+            font_size='12sp', 
             color=(0.7, 0.75, 0.9, 1), 
             halign='left'
         )
         self.lbl_week = FaLabel(
             text="", 
-            font_size='14sp', 
+            font_size='13sp', 
             color=(0.9, 0.75, 0.95, 1), 
             halign='right'
         )
@@ -191,29 +188,43 @@ class ZekrApp(App):
         
         root.add_widget(header)
         
-        # === کارت شمارنده ===
-        card = Card()
+        # === دایره شمارنده طلایی ===
+        circle_row = BoxLayout(orientation='horizontal', size_hint_y=None, height=dp(160))
+        circle_row.add_widget(Widget())  # فضای خالی چپ
         
+        circle_container = FloatLayout(size_hint=(None, None), size=(dp(140), dp(140)))
+        
+        # دایره طلایی
+        self.circle = CircleCounter(pos_hint={'center_x': 0.5, 'center_y': 0.5})
+        circle_container.add_widget(self.circle)
+        
+        # عدد روی دایره
         self.lbl_count = FaLabel(
             text="۰", 
-            font_size='80sp', 
-            color=(0.35, 0.75, 1, 1), 
-            bold=True
+            font_size='52sp', 
+            color=(0.1, 0.08, 0.02, 1), 
+            bold=True,
+            pos_hint={'center_x': 0.5, 'center_y': 0.5}
         )
-        card.add_widget(self.lbl_count)
+        circle_container.add_widget(self.lbl_count)
         
-        # نوار پیشرفت استاندارد
-        self.progress = ProgressBar(max=100, value=0, size_hint_y=None, height=dp(10))
-        card.add_widget(self.progress)
+        circle_row.add_widget(circle_container)
+        circle_row.add_widget(Widget())  # فضای خالی راست
+        
+        root.add_widget(circle_row)
+        
+        # === نوار پیشرفت ===
+        self.progress = ProgressBar(max=100, value=0, size_hint_y=None, height=dp(8))
+        root.add_widget(self.progress)
         
         self.lbl_target = FaLabel(
             text="هدف: ۱۰۰", 
             font_size='13sp', 
             color=(0.7, 0.75, 0.85, 1)
         )
-        card.add_widget(self.lbl_target)
+        root.add_widget(self.lbl_target)
         
-        # دکمه‌ها
+        # === دکمه‌ها ===
         grid = GridLayout(cols=2, spacing=dp(10), size_hint_y=None, height=dp(110))
         
         btn_add = StyledBtn("+ ذکر", bg_color=(0.1, 0.5, 0.95, 1))
@@ -232,9 +243,7 @@ class ZekrApp(App):
         grid.add_widget(btn_sub)
         grid.add_widget(btn_reset)
         grid.add_widget(btn_target)
-        card.add_widget(grid)
-        
-        root.add_widget(card)
+        root.add_widget(grid)
         
         # === دکمه بانک اذکار ===
         btn_list = StyledBtn(
@@ -252,58 +261,76 @@ class ZekrApp(App):
         return root
     
     def update_time(self, *args):
-        now = datetime.now()
-        self.lbl_time.set_fa(to_fa_num(now.strftime("%H:%M:%S")))
-        self.lbl_date.set_fa(to_fa_num(now.strftime("%Y/%m/%d")))
-        self.lbl_week.set_fa(WEEKLY_ZEKR.get(now.weekday(), "ذکر روز"))
+        try:
+            now = datetime.now()
+            self.lbl_time.set_fa(to_fa_num(now.strftime("%H:%M:%S")))
+            self.lbl_date.set_fa(to_fa_num(now.strftime("%Y/%m/%d")))
+            self.lbl_week.set_fa(WEEKLY_ZEKR.get(now.weekday(), "ذکر روز"))
+        except:
+            pass
     
     def update_ui(self):
-        c = self.data.get("count", 0)
-        t = self.data.get("daily_target", 100)
-        self.lbl_count.set_fa(to_fa_num(c))
-        self.lbl_target.set_fa(f"هدف: {to_fa_num(t)}")
-        self.progress.max = t
-        self.progress.value = min(c, t)
+        try:
+            c = self.data.get("count", 0)
+            t = self.data.get("daily_target", 100)
+            self.lbl_count.set_fa(to_fa_num(c))
+            self.lbl_target.set_fa(f"هدف: {to_fa_num(t)}")
+            self.progress.max = t
+            self.progress.value = min(c, t)
+        except:
+            pass
     
     def add_zekr(self, *args):
-        self.data["count"] = self.data.get("count", 0) + 1
-        save_data(self.data)
-        self.update_ui()
-    
-    def remove_zekr(self, *args):
-        if self.data.get("count", 0) > 0:
-            self.data["count"] -= 1
+        try:
+            self.data["count"] = self.data.get("count", 0) + 1
             save_data(self.data)
             self.update_ui()
+        except Exception as e:
+            print("Add error:", e)
+    
+    def remove_zekr(self, *args):
+        try:
+            if self.data.get("count", 0) > 0:
+                self.data["count"] -= 1
+                save_data(self.data)
+                self.update_ui()
+        except Exception as e:
+            print("Remove error:", e)
     
     def reset_counter(self, *args):
-        self.data["count"] = 0
-        save_data(self.data)
-        self.update_ui()
+        try:
+            self.data["count"] = 0
+            save_data(self.data)
+            self.update_ui()
+        except Exception as e:
+            print("Reset error:", e)
     
     def set_target_popup(self, *args):
-        box = BoxLayout(orientation='vertical', padding=dp(20), spacing=dp(15))
-        
-        inp = TextInput(
-            text=str(self.data.get("daily_target", 100)),
-            multiline=False,
-            input_filter='int',
-            font_size='20sp',
-            halign='center',
-            background_color=(0.1, 0.12, 0.2, 1),
-            foreground_color=(1, 1, 1, 1),
-            cursor_color=(0.3, 0.7, 1, 1)
-        )
-        if FONT_NAME:
-            inp.font_name = FONT_NAME
-        
-        btn_ok = StyledBtn("تایید", bg_color=(0.1, 0.6, 0.4, 1))
-        popup = Popup(title=fa("تنظیم هدف"), content=box, size_hint=(0.85, 0.38))
-        
-        box.add_widget(inp)
-        box.add_widget(btn_ok)
-        btn_ok.bind(on_press=lambda x: self._set_target(inp.text, popup))
-        popup.open()
+        try:
+            box = BoxLayout(orientation='vertical', padding=dp(20), spacing=dp(15))
+            
+            inp = TextInput(
+                text=str(self.data.get("daily_target", 100)),
+                multiline=False,
+                input_filter='int',
+                font_size='20sp',
+                halign='center',
+                background_color=(0.1, 0.12, 0.2, 1),
+                foreground_color=(1, 1, 1, 1),
+                cursor_color=(0.3, 0.7, 1, 1)
+            )
+            if FONT_NAME:
+                inp.font_name = FONT_NAME
+            
+            btn_ok = StyledBtn("تایید", bg_color=(0.1, 0.6, 0.4, 1))
+            popup = Popup(title=fa("تنظیم هدف"), content=box, size_hint=(0.85, 0.38))
+            
+            box.add_widget(inp)
+            box.add_widget(btn_ok)
+            btn_ok.bind(on_press=lambda x: self._set_target(inp.text, popup))
+            popup.open()
+        except Exception as e:
+            print("Popup error:", e)
     
     def _set_target(self, val, popup):
         try:
@@ -315,49 +342,55 @@ class ZekrApp(App):
         popup.dismiss()
     
     def open_zekr_list(self, *args):
-        content = BoxLayout(orientation='vertical', padding=dp(12), spacing=dp(10))
-        scroll = ScrollView()
-        box = BoxLayout(orientation='vertical', size_hint_y=None, spacing=dp(8))
-        box.bind(minimum_height=box.setter('height'))
-        
-        for name in ZEKR_FOLDERS.keys():
-            btn = StyledBtn(name, bg_color=(0.2, 0.25, 0.4, 1))
-            btn.bind(on_press=lambda x, n=name: self.show_zekrs(n))
-            box.add_widget(btn)
-        
-        scroll.add_widget(box)
-        content.add_widget(scroll)
-        
-        btn_close = StyledBtn("بستن", bg_color=(0.4, 0.2, 0.3, 1))
-        popup = Popup(title=fa("بانک اذکار"), content=content, size_hint=(0.9, 0.82))
-        btn_close.bind(on_press=popup.dismiss)
-        content.add_widget(btn_close)
-        popup.open()
+        try:
+            content = BoxLayout(orientation='vertical', padding=dp(12), spacing=dp(10))
+            scroll = ScrollView()
+            box = BoxLayout(orientation='vertical', size_hint_y=None, spacing=dp(8))
+            box.bind(minimum_height=box.setter('height'))
+            
+            for name in ZEKR_FOLDERS.keys():
+                btn = StyledBtn(name, bg_color=(0.2, 0.25, 0.4, 1))
+                btn.bind(on_press=lambda x, n=name: self.show_zekrs(n))
+                box.add_widget(btn)
+            
+            scroll.add_widget(box)
+            content.add_widget(scroll)
+            
+            btn_close = StyledBtn("بستن", bg_color=(0.4, 0.2, 0.3, 1))
+            popup = Popup(title=fa("بانک اذکار"), content=content, size_hint=(0.9, 0.82))
+            btn_close.bind(on_press=popup.dismiss)
+            content.add_widget(btn_close)
+            popup.open()
+        except Exception as e:
+            print("List error:", e)
     
     def show_zekrs(self, name):
-        inner = BoxLayout(orientation='vertical', padding=dp(12), spacing=dp(10))
-        scroll = ScrollView()
-        box = BoxLayout(orientation='vertical', size_hint_y=None, spacing=dp(8))
-        box.bind(minimum_height=box.setter('height'))
-        
-        for zekr in ZEKR_FOLDERS[name]:
-            lbl = FaLabel(
-                zekr,
-                font_size='18sp',
-                color=(0.9, 0.85, 0.95, 1),
-                size_hint_y=None,
-                height=dp(48)
-            )
-            box.add_widget(lbl)
-        
-        scroll.add_widget(box)
-        inner.add_widget(scroll)
-        
-        btn_back = StyledBtn("برگشت", bg_color=(0.3, 0.3, 0.45, 1))
-        popup = Popup(title=fa(name), content=inner, size_hint=(0.9, 0.82))
-        btn_back.bind(on_press=popup.dismiss)
-        inner.add_widget(btn_back)
-        popup.open()
+        try:
+            inner = BoxLayout(orientation='vertical', padding=dp(12), spacing=dp(10))
+            scroll = ScrollView()
+            box = BoxLayout(orientation='vertical', size_hint_y=None, spacing=dp(8))
+            box.bind(minimum_height=box.setter('height'))
+            
+            for zekr in ZEKR_FOLDERS[name]:
+                lbl = FaLabel(
+                    zekr,
+                    font_size='18sp',
+                    color=(0.9, 0.85, 0.95, 1),
+                    size_hint_y=None,
+                    height=dp(48)
+                )
+                box.add_widget(lbl)
+            
+            scroll.add_widget(box)
+            inner.add_widget(scroll)
+            
+            btn_back = StyledBtn("برگشت", bg_color=(0.3, 0.3, 0.45, 1))
+            popup = Popup(title=fa(name), content=inner, size_hint=(0.9, 0.82))
+            btn_back.bind(on_press=popup.dismiss)
+            inner.add_widget(btn_back)
+            popup.open()
+        except Exception as e:
+            print("Zekr error:", e)
 
 if __name__ == '__main__':
     ZekrApp().run()

@@ -1,20 +1,21 @@
 [app]
-title = Zekr App
-package.name = zekr_app
-package.domain = ir.yourname.zekr
+title = Tasbih Noor
+package.name = tasbihnoor
+package.domain = org.mina
 source.dir = .
-source.include_exts = py,png,jpg,ttf,json
-version = 1.0.0
-requirements = python3,kivy,arabic_reshaper,python-bidi
+source.include_exts = py,png,jpg,kv,atlas,ttf
+version = 1.0
+requirements = python3,kivy,jdatetime,arabic_reshaper,python_bidi
 orientation = portrait
-android.permissions = INTERNET
+fullscreen = 0
 android.api = 33
 android.minapi = 21
-android.ndk = 25b
-android.archs = arm64-v8a
-android.accept_sdk_license = True
-android.skip_update = False
+android.ndk = 23b
+android.sdk = 33
+android.archs = arm64-v8a, armeabi-v7a
+android.allow_backup = True
+android.logcat_filters = *:S python:D
 
 [buildozer]
 log_level = 2
-warn_on_root = 0
+warn_on_root = 1

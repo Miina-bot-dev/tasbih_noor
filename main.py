@@ -4,6 +4,7 @@ import json
 from datetime import datetime
 from kivy.app import App
 from kivy.clock import Clock
+from kivy.core.text import LabelBase
 from kivy.core.window import Window
 from kivy.metrics import dp
 from kivy.uix.boxlayout import BoxLayout
@@ -19,6 +20,20 @@ from kivy.uix.textinput import TextInput
 # --------------------------
 Window.clearcolor = (0.05, 0.06, 0.12, 1)
 
+# بارگذاری فونت فارسی
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+FONT_FILE = os.path.join(BASE_DIR, "Vazirmatn-Regular.ttf")
+
+if os.path.exists(FONT_FILE):
+    try:
+        LabelBase.register(name="Vazir", fn_regular=FONT_FILE)
+        FONT_NAME = "Vazir"
+    except Exception:
+        FONT_NAME = None
+else:
+    FONT_NAME = None
+
+# بارگذاری arabic_reshaper
 try:
     import arabic_reshaper
     from bidi.algorithm import get_display
@@ -32,7 +47,7 @@ def fa(text):
     if text is None:
         return ""
     txt = str(text)
-    if HAS_ARABIC:
+    if HAS_ARABIC and FONT_NAME:
         try:
             return get_display(arabic_reshaper.reshape(txt))
         except:
@@ -43,7 +58,6 @@ def to_fa_num(s):
     return str(s).translate(FA_DIGITS)
 
 def get_data_path():
-    """مسیر امن برای ذخیره داده در اندروید"""
     try:
         app = App.get_running_app()
         if app:
@@ -92,6 +106,7 @@ class FaLabel(Label):
         kwargs.setdefault('font_size', '18sp')
         kwargs.setdefault('color', (1, 1, 1, 1))
         super().__init__(**kwargs)
+        self.font_name = FONT_NAME
         self.text = fa(text)
         self.halign = 'center'
         self.valign = 'middle'
@@ -106,6 +121,7 @@ class FaLabel(Label):
 class StyledBtn(Button):
     def __init__(self, text="", bg_color=(0.2, 0.5, 0.9, 1), **kwargs):
         super().__init__(**kwargs)
+        self.font_name = FONT_NAME
         self.text = fa(text)
         self.background_normal = ''
         self.background_color = bg_color
@@ -210,6 +226,8 @@ class ZekrApp(App):
         box = BoxLayout(orientation='vertical', padding=dp(20), spacing=dp(15))
         inp = TextInput(text=str(self.data.get("daily_target", 100)), 
                        multiline=False, input_filter='int', font_size='20sp')
+        if FONT_NAME:
+            inp.font_name = FONT_NAME
         btn_ok = StyledBtn("تایید", bg_color=(0.1, 0.6, 0.4, 1))
         popup = Popup(title=fa("هدف جدید"), content=box, size_hint=(0.85, 0.35))
         box.add_widget(inp)

@@ -24,9 +24,10 @@ jobs:
             cmake libffi-dev libssl-dev \
             libsqlite3-dev libbz2-dev libreadline-dev \
             liblzma-dev libjpeg-dev libpng-dev
+          pip install --upgrade pip
           pip install buildozer cython
 
-      - name: Clean everything
+      - name: Clean old builds
         run: |
           rm -rf ~/.buildozer .buildozer bin
           buildozer android distclean 2>/dev/null || true

@@ -9,6 +9,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Download Persian Font
+        run: |
+          wget -q https://raw.githubusercontent.com/rastikerdar/vazirmatn/master/fonts/ttf/Vazirmatn-Regular.ttf -O Vazirmatn-Regular.ttf
+          ls -la Vazirmatn-Regular.ttf
+
       - name: Setup Python
         uses: actions/setup-python@v5
         with:

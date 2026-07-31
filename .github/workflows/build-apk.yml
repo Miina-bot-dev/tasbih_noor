@@ -12,11 +12,25 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Build APK with Buildozer
-        uses: ArtemSBulgakov/buildozer-action@v1
+      - name: Cache Buildozer
+        uses: actions/cache@v4
         with:
-          workdir: .
-          buildozer_version: stable
+          path: |
+            ~/.buildozer
+            .buildozer
+          key: buildozer-${{ hashFiles('buildozer.spec') }}
+          restore-keys: |
+            buildozer-
+
+      - name: Build APK with Buildozer
+        run: |
+          docker run --rm \
+            -v "$(pwd):/home/user/hostcwd" \
+            -v "$HOME/.buildozer:/home/user/.buildozer" \
+            -w /home/user/hostcwd \
+            -e BUILDOZER_WARN_ON_ROOT=0 \
+            ghcr.io/kivy/buildozer:latest \
+            bash -c "buildozer android debug"
 
       - name: Upload APK
         uses: actions/upload-artifact@v4

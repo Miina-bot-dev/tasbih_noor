@@ -27,10 +27,8 @@ jobs:
           docker run --rm \
             -v "$(pwd):/home/user/hostcwd" \
             -v "$HOME/.buildozer:/home/user/.buildozer" \
-            -w /home/user/hostcwd \
-            -e BUILDOZER_WARN_ON_ROOT=0 \
             ghcr.io/kivy/buildozer:latest \
-            bash -c "buildozer android debug"
+            android debug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4

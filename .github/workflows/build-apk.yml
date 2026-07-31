@@ -1,79 +1,27 @@
-name: Build Kivy APK
+name: Build APK
 
 on:
   push:
+    branches: [main, master]
+  pull_request:
     branches: [main, master]
   workflow_dispatch:
 
 jobs:
   build:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.10'
-
-      - name: Restore Buildozer cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.buildozer
-            ~/.gradle
-          key: ${{ runner.os }}-buildozer-v3-${{ hashFiles('buildozer.spec') }}
-          restore-keys: |
-            ${{ runner.os }}-buildozer-v3-
-
-      - name: Install system dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            git zip unzip openjdk-17-jdk python3-pip \
-            autoconf libtool libtool-bin pkg-config \
-            zlib1g-dev libncurses5-dev libncursesw5-dev liblzma-dev \
-            libffi-dev libssl-dev automake cmake \
-            libsqlite3-dev tk-dev libgdbm-dev libc6-dev \
-            libbz2-dev libreadline-dev xz-utils
-
-      - name: Install Python tools
-        run: |
-          python -m pip install --upgrade pip
-          pip install buildozer cython==0.29.36
-
-      - name: Setup Android SDK cmdline-tools
-        run: |
-          SDK_DIR="$HOME/.buildozer/android/platform/android-sdk"
-          mkdir -p "$SDK_DIR/cmdline-tools"
-          
-          # اگه cmdline-tools نصب نیست، دانلود و اکسترکت کن
-          if [ ! -f "$SDK_DIR/cmdline-tools/latest/bin/sdkmanager" ]; then
-            echo "Downloading cmdline-tools..."
-            cd "$SDK_DIR/cmdline-tools"
-            wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
-            unzip -q commandlinetools-linux-11076708_latest.zip
-            mv cmdline-tools latest
-            rm -f commandlinetools-linux-11076708_latest.zip
-          fi
-          
-          # لایسنس‌ها
-          mkdir -p "$SDK_DIR/licenses"
-          echo "24333f8a63b6825ea9c5514f83c2829b004d1fee" > "$SDK_DIR/licenses/android-sdk-license"
-          echo "d56f5187479451eabf01fb78af6dfcb131a6481e" >> "$SDK_DIR/licenses/android-sdk-license"
-          echo "84831b9409646a918e30573bab4c9c91346d8abd" > "$SDK_DIR/licenses/android-sdk-preview-license"
-
       - name: Build APK with Buildozer
-        run: |
-          export ANDROID_HOME=$HOME/.buildozer/android/platform/android-sdk
-          export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$PATH
-          buildozer android debug
-        timeout-minutes: 120
+        uses: ArtemSBulgakov/buildozer-action@v1
+        id: buildozer
+        with:
+          buildozer_version: stable
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: apk-debug
-          path: bin/*.apk
-          if-no-files-found: error
+          name: apk
+          path: ${{ steps.buildozer.outputs.filename }}

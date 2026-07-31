@@ -12,7 +12,7 @@ android.api = 33
 android.minapi = 21
 android.ndk = 23b
 android.sdk = 33
-android.archs = arm64-v8a, armeabi-v7a
+android.archs = arm64-v8a,armeabi-v7a
 android.allow_backup = True
 android.logcat_filters = *:S python:D
 

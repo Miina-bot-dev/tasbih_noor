@@ -23,9 +23,9 @@ jobs:
           path: |
             ~/.buildozer
             ~/.gradle
-          key: ${{ runner.os }}-buildozer-${{ hashFiles('buildozer.spec') }}
+          key: ${{ runner.os }}-buildozer-v3-${{ hashFiles('buildozer.spec') }}
           restore-keys: |
-            ${{ runner.os }}-buildozer-
+            ${{ runner.os }}-buildozer-v3-
 
       - name: Install system dependencies
         run: |
@@ -43,17 +43,31 @@ jobs:
           python -m pip install --upgrade pip
           pip install buildozer cython==0.29.36
 
-      - name: Accept Android SDK licenses
+      - name: Setup Android SDK cmdline-tools
         run: |
-          mkdir -p $HOME/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin
-          mkdir -p $HOME/.buildozer/android/platform/android-sdk/licenses
-          echo "24333f8a63b6825ea9c5514f83c2829b004d1fee" > $HOME/.buildozer/android/platform/android-sdk/licenses/android-sdk-license
-          echo "d56f5187479451eabf01fb78af6dfcb131a6481e" >> $HOME/.buildozer/android/platform/android-sdk/licenses/android-sdk-license
-          echo "84831b9409646a918e30573bab4c9c91346d8abd" > $HOME/.buildozer/android/platform/android-sdk/licenses/android-sdk-preview-license
+          SDK_DIR="$HOME/.buildozer/android/platform/android-sdk"
+          mkdir -p "$SDK_DIR/cmdline-tools"
+          
+          # اگه cmdline-tools نصب نیست، دانلود و اکسترکت کن
+          if [ ! -f "$SDK_DIR/cmdline-tools/latest/bin/sdkmanager" ]; then
+            echo "Downloading cmdline-tools..."
+            cd "$SDK_DIR/cmdline-tools"
+            wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
+            unzip -q commandlinetools-linux-11076708_latest.zip
+            mv cmdline-tools latest
+            rm -f commandlinetools-linux-11076708_latest.zip
+          fi
+          
+          # لایسنس‌ها
+          mkdir -p "$SDK_DIR/licenses"
+          echo "24333f8a63b6825ea9c5514f83c2829b004d1fee" > "$SDK_DIR/licenses/android-sdk-license"
+          echo "d56f5187479451eabf01fb78af6dfcb131a6481e" >> "$SDK_DIR/licenses/android-sdk-license"
+          echo "84831b9409646a918e30573bab4c9c91346d8abd" > "$SDK_DIR/licenses/android-sdk-preview-license"
 
       - name: Build APK with Buildozer
         run: |
           export ANDROID_HOME=$HOME/.buildozer/android/platform/android-sdk
+          export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$PATH
           buildozer android debug
         timeout-minutes: 120
 

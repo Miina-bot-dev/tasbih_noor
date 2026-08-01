@@ -115,16 +115,17 @@ class ModernBtn(Button):
         self.text = fa(text)
 
 class DoubleTapBtn(ModernBtn):
-    """دکمه‌ای که با دوبار زدن (دابل تپ) اکشن اجرا می‌کنه"""
+    """دکمه با دابل تپ"""
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.last_click = 0
+        self.double_tap_callback = None
         
     def on_touch_down(self, touch):
         if self.collide_point(*touch.pos):
             current_time = time.time()
-            if current_time - self.last_click < 0.4:  # دابل تپ = کمتر از 0.4 ثانیه
-                self.dispatch('on_double_tap')
+            if current_time - self.last_click < 0.4 and self.double_tap_callback:
+                self.double_tap_callback()
                 self.last_click = 0
                 return True
             else:
@@ -161,15 +162,15 @@ class ZekrApp(App):
         self.main_layout = BoxLayout(orientation="vertical", spacing=dp(15), padding=[dp(20), dp(70), dp(20), dp(40)], size_hint_y=None)
         self.main_layout.bind(minimum_height=self.main_layout.setter("height"))
         
-        # ساعت با سایز کوچکتر
+        # ساعت کوچکتر
         self.lbl_time = FaLabel(text="00:00:00", font_size="32sp", color=(1, 0.84, 0, 1), bold=True, halign="left")
         self.main_layout.add_widget(self.lbl_time)
 
-        # ذکر انتخاب شده از بانک اذکار
+        # ذکر انتخاب شده
         self.lbl_selected_zekr = FaLabel(text="ذکر خود را انتخاب کنید", font_size="22sp", color=(0.4, 0.9, 0.6, 1), bold=True)
         self.main_layout.add_widget(self.lbl_selected_zekr)
 
-        # ردیف تاریخ و ذکر هفتگی
+        # تاریخ و ذکر هفتگی
         info_row = BoxLayout(orientation="horizontal", size_hint_y=None, height=dp(30))
         self.lbl_date = FaLabel(text="", font_size="14sp", halign="left", color=(0.8, 0.8, 0.8, 1))
         self.lbl_week_zekr = FaLabel(text="", font_size="17sp", halign="right", color=(1, 0.9, 0.6, 1), bold=True)
@@ -188,7 +189,6 @@ class ZekrApp(App):
         card.add_widget(self.progress)
         card.add_widget(self.lbl_target_info)
         
-        # دکمه‌های کنترل
         btns_grid = GridLayout(cols=2, spacing=dp(10), size_hint_y=None, height=dp(55))
         btn_add = ModernBtn(text="+ ذکر", bg_color=(0.1, 0.5, 0.9, 0.9))
         btn_add.bind(on_press=self.add_zekr)
@@ -282,24 +282,22 @@ class ZekrApp(App):
         scroll = ScrollView(); items_box = BoxLayout(orientation="vertical", size_hint_y=None, spacing=dp(8))
         items_box.bind(minimum_height=items_box.setter("height"))
         
+        popup = Popup(title=fa(name), content=inner, size_hint=(0.9, 0.8))
+        
         for zekr in ZEKR_FOLDERS[name]:
-            # دابل تپ: دو بار سریع بزنی → ذکر انتخاب می‌شه
             btn = DoubleTapBtn(text=zekr, bg_color=(0.12, 0.16, 0.24, 1))
-            btn.bind(on_double_tap=lambda x, z=zekr, p=None: self.select_zekr(z, self.current_popup))
+            btn.double_tap_callback = lambda z=zekr, p=popup: self.select_zekr(z, p)
             items_box.add_widget(btn)
             
         scroll.add_widget(items_box); inner.add_widget(scroll)
         close = ModernBtn(text="برگشت", bg_color=(0.3, 0.3, 0.35, 1))
-        self.current_popup = Popup(title=fa(name), content=inner, size_hint=(0.9, 0.8))
-        close.bind(on_press=self.current_popup.dismiss); inner.add_widget(close)
-        self.current_popup.open()
+        close.bind(on_press=popup.dismiss); inner.add_widget(close)
+        popup.open()
 
     def select_zekr(self, zekr_text, popup):
-        """وقتی دابل تپ کردی، ذکر رو روی صفحه اصلی نشون بده و popup رو ببند"""
         self.lbl_selected_zekr.set_fa(zekr_text)
-        self.lbl_selected_zekr.color = (0.2, 0.9, 0.5, 1)  # سبز روشن
-        if popup:
-            popup.dismiss()
+        self.lbl_selected_zekr.color = (0.2, 0.9, 0.5, 1)
+        popup.dismiss()
 
 if __name__ == "__main__":
     ZekrApp().run()

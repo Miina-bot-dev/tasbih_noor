@@ -3,7 +3,9 @@ from kivy.uix.image import Image
 from kivy.uix.floatlayout import FloatLayout
 import os
 import json
+import time
 from datetime import datetime
+import jdatetime
 import arabic_reshaper
 from bidi.algorithm import get_display
 from kivy.app import App
@@ -22,9 +24,6 @@ from kivy.uix.textinput import TextInput
 from kivy.uix.progressbar import ProgressBar
 from kivy.uix.widget import Widget
 
-# --------------------------
-# تنظیمات استایل حرفه‌ای
-# --------------------------
 Window.clearcolor = (0.05, 0.06, 0.1, 1)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -75,14 +74,13 @@ ZEKR_FOLDERS = {
     "رزق و روزی": ["یا رزاق", "یا غنی", "یا واسع", "یا فتاح", "استغفرالله"],
     "گشایش مشکلات": ["یا فتاح", "یا کاشف الکرب", "یا مجیب", "یا قاضی الحاجات"],
     "آرامش قلب": ["یا سلام", "یا لطیف", "یا صبور", "یا نور", "یا رؤوف"],
-    # ... بقیه اذکار در حافظه کد شما محفوظ است
 }
 
 class GlassCard(BoxLayout):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.orientation = "vertical"
-        self.padding = [dp(20), dp(5), dp(20), dp(20)] # کاهش پدینگ بالا برای بالا رفتن عدد
+        self.padding = [dp(20), dp(5), dp(20), dp(20)]
         self.spacing = dp(10)
         self.size_hint_y = None
         self.bind(minimum_height=self.setter("height"))
@@ -116,6 +114,23 @@ class ModernBtn(Button):
     def set_fa(self, text):
         self.text = fa(text)
 
+class DoubleTapBtn(ModernBtn):
+    """دکمه‌ای که با دوبار زدن (دابل تپ) اکشن اجرا می‌کنه"""
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.last_click = 0
+        
+    def on_touch_down(self, touch):
+        if self.collide_point(*touch.pos):
+            current_time = time.time()
+            if current_time - self.last_click < 0.4:  # دابل تپ = کمتر از 0.4 ثانیه
+                self.dispatch('on_double_tap')
+                self.last_click = 0
+                return True
+            else:
+                self.last_click = current_time
+        return super().on_touch_down(touch)
+
 class FaLabel(Label):
     def __init__(self, text="", font_size="16sp", color=(1,1,1,1), bold=False, halign="center", **kwargs):
         super().__init__(**kwargs)
@@ -137,23 +152,24 @@ class ZekrApp(App):
         self.data = load_data()
         root = FloatLayout()
 
-        # ۱. عکس پس‌زمینه (با چک کردن وجود فایل)
         banner_path = os.path.join(BASE_DIR, 'main_banner.png')
         if os.path.exists(banner_path):
             bg = Image(source=banner_path, allow_stretch=True, keep_ratio=False, color=(0.6, 0.6, 0.6, 1))
             root.add_widget(bg)
 
-        # ۲. محتوای اسکرول‌شونده
         self.scroll = ScrollView(do_scroll_x=False)
-        # افزایش پدینگ بالا برای فاصله گرفتن از سقف
         self.main_layout = BoxLayout(orientation="vertical", spacing=dp(15), padding=[dp(20), dp(70), dp(20), dp(40)], size_hint_y=None)
         self.main_layout.bind(minimum_height=self.main_layout.setter("height"))
         
-        # ردیف ساعت (سمت چپ)
-        self.lbl_time = FaLabel(text="00:00:00", font_size="45sp", color=(1, 0.84, 0, 1), bold=True, halign="left")
+        # ساعت با سایز کوچکتر
+        self.lbl_time = FaLabel(text="00:00:00", font_size="32sp", color=(1, 0.84, 0, 1), bold=True, halign="left")
         self.main_layout.add_widget(self.lbl_time)
 
-        # ردیف تاریخ و ذکر (افقی)
+        # ذکر انتخاب شده از بانک اذکار
+        self.lbl_selected_zekr = FaLabel(text="ذکر خود را انتخاب کنید", font_size="22sp", color=(0.4, 0.9, 0.6, 1), bold=True)
+        self.main_layout.add_widget(self.lbl_selected_zekr)
+
+        # ردیف تاریخ و ذکر هفتگی
         info_row = BoxLayout(orientation="horizontal", size_hint_y=None, height=dp(30))
         self.lbl_date = FaLabel(text="", font_size="14sp", halign="left", color=(0.8, 0.8, 0.8, 1))
         self.lbl_week_zekr = FaLabel(text="", font_size="17sp", halign="right", color=(1, 0.9, 0.6, 1), bold=True)
@@ -205,9 +221,10 @@ class ZekrApp(App):
 
     def update_live_data(self, *args):
         now = datetime.now()
+        jnow = jdatetime.datetime.now()
         self.lbl_time.set_fa(to_fa_num(now.strftime("%H:%M:%S")))
-        self.lbl_date.set_fa(to_fa_num(now.strftime("%Y/%m/%d")))
-        wd = now.weekday()
+        self.lbl_date.set_fa(to_fa_num(jnow.strftime("%Y/%m/%d")))
+        wd = jnow.weekday()
         self.lbl_week_zekr.set_fa(WEEKLY_ZEKR.get(wd, "ذکر روز"))
 
     def update_ui(self):
@@ -264,12 +281,25 @@ class ZekrApp(App):
         inner = BoxLayout(orientation="vertical", padding=dp(10), spacing=dp(10))
         scroll = ScrollView(); items_box = BoxLayout(orientation="vertical", size_hint_y=None, spacing=dp(8))
         items_box.bind(minimum_height=items_box.setter("height"))
+        
         for zekr in ZEKR_FOLDERS[name]:
-            items_box.add_widget(ModernBtn(text=zekr, bg_color=(0.12, 0.16, 0.24, 1)))
+            # دابل تپ: دو بار سریع بزنی → ذکر انتخاب می‌شه
+            btn = DoubleTapBtn(text=zekr, bg_color=(0.12, 0.16, 0.24, 1))
+            btn.bind(on_double_tap=lambda x, z=zekr, p=None: self.select_zekr(z, self.current_popup))
+            items_box.add_widget(btn)
+            
         scroll.add_widget(items_box); inner.add_widget(scroll)
         close = ModernBtn(text="برگشت", bg_color=(0.3, 0.3, 0.35, 1))
-        popup = Popup(title=fa(name), content=inner, size_hint=(0.9, 0.8))
-        close.bind(on_press=popup.dismiss); inner.add_widget(close); popup.open()
+        self.current_popup = Popup(title=fa(name), content=inner, size_hint=(0.9, 0.8))
+        close.bind(on_press=self.current_popup.dismiss); inner.add_widget(close)
+        self.current_popup.open()
+
+    def select_zekr(self, zekr_text, popup):
+        """وقتی دابل تپ کردی، ذکر رو روی صفحه اصلی نشون بده و popup رو ببند"""
+        self.lbl_selected_zekr.set_fa(zekr_text)
+        self.lbl_selected_zekr.color = (0.2, 0.9, 0.5, 1)  # سبز روشن
+        if popup:
+            popup.dismiss()
 
 if __name__ == "__main__":
     ZekrApp().run()

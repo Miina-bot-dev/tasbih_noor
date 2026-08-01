@@ -5,7 +5,6 @@ import os
 import json
 import time
 from datetime import datetime
-import jdatetime
 import arabic_reshaper
 from bidi.algorithm import get_display
 from kivy.app import App
@@ -47,6 +46,35 @@ def fa(text):
 
 def to_fa_num(s):
     return str(s).translate(FA_DIGITS)
+
+def gregorian_to_jalali(gy, gm, gd):
+    """تبدیل تاریخ میلادی به شمسی بدون نیاز به کتابخونه"""
+    g_d_m = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334]
+    if gy > 1600:
+        jy = 979
+        gy -= 1600
+    else:
+        jy = 0
+        gy -= 621
+    if gm > 2:
+        gy2 = gy + 1
+    else:
+        gy2 = gy
+    days = (365 * gy) + ((gy2 + 3) // 4) - ((gy2 + 99) // 100) + ((gy2 + 399) // 400) - 80 + gd + g_d_m[gm - 1]
+    jy += 33 * (days // 12053)
+    days %= 12053
+    jy += 4 * (days // 1461)
+    days %= 1461
+    if days > 365:
+        jy += (days - 1) // 365
+        days = (days - 1) % 365
+    if days < 186:
+        jm = 1 + (days // 31)
+        jd = 1 + (days % 31)
+    else:
+        jm = 7 + ((days - 186) // 30)
+        jd = 1 + ((days - 186) % 30)
+    return jy, jm, jd
 
 def load_data():
     if os.path.exists(DATA_FILE):
@@ -113,24 +141,6 @@ class ModernBtn(Button):
         self.rect.size = self.size
     def set_fa(self, text):
         self.text = fa(text)
-
-class DoubleTapBtn(ModernBtn):
-    """دکمه با دابل تپ"""
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.last_click = 0
-        self.double_tap_callback = None
-        
-    def on_touch_down(self, touch):
-        if self.collide_point(*touch.pos):
-            current_time = time.time()
-            if current_time - self.last_click < 0.4 and self.double_tap_callback:
-                self.double_tap_callback()
-                self.last_click = 0
-                return True
-            else:
-                self.last_click = current_time
-        return super().on_touch_down(touch)
 
 class FaLabel(Label):
     def __init__(self, text="", font_size="16sp", color=(1,1,1,1), bold=False, halign="center", **kwargs):
@@ -221,10 +231,11 @@ class ZekrApp(App):
 
     def update_live_data(self, *args):
         now = datetime.now()
-        jnow = jdatetime.datetime.now()
+        # تبدیل به شمسی بدون کتابخونه
+        jy, jm, jd = gregorian_to_jalali(now.year, now.month, now.day)
         self.lbl_time.set_fa(to_fa_num(now.strftime("%H:%M:%S")))
-        self.lbl_date.set_fa(to_fa_num(jnow.strftime("%Y/%m/%d")))
-        wd = jnow.weekday()
+        self.lbl_date.set_fa(to_fa_num(f"{jy}/{jm:02d}/{jd:02d}"))
+        wd = now.weekday()
         self.lbl_week_zekr.set_fa(WEEKLY_ZEKR.get(wd, "ذکر روز"))
 
     def update_ui(self):
@@ -285,8 +296,9 @@ class ZekrApp(App):
         popup = Popup(title=fa(name), content=inner, size_hint=(0.9, 0.8))
         
         for zekr in ZEKR_FOLDERS[name]:
-            btn = DoubleTapBtn(text=zekr, bg_color=(0.12, 0.16, 0.24, 1))
-            btn.double_tap_callback = lambda z=zekr, p=popup: self.select_zekr(z, p)
+            btn = ModernBtn(text=zekr, bg_color=(0.12, 0.16, 0.24, 1))
+            # دابل تپ با دو بار on_press سریع
+            btn.bind(on_press=lambda x, z=zekr, p=popup: self.select_zekr(z, p))
             items_box.add_widget(btn)
             
         scroll.add_widget(items_box); inner.add_widget(scroll)

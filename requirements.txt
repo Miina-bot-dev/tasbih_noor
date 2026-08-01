@@ -1,3 +1,0 @@
-kivy
-arabic-reshaper
-python-bidi

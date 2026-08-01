@@ -4,7 +4,6 @@ package.name = tasbihnoor
 package.domain = com.mina
 source.dir = .
 source.include_exts = py,png,jpg,kv,atlas,ttf,json
-source.include_patterns = assets/*
 version = 1.0
 requirements = python3,kivy,arabic-reshaper,python-bidi,jdatetime
 orientation = portrait

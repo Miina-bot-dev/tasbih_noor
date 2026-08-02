@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
 import json
-import time
 import webbrowser
 from datetime import datetime
 import arabic_reshaper
@@ -11,7 +10,7 @@ from kivy.app import App
 from kivy.clock import Clock
 from kivy.core.text import LabelBase
 from kivy.core.window import Window
-from kivy.graphics import Color, RoundedRectangle, Line, Ellipse, Rectangle
+from kivy.graphics import Color, RoundedRectangle, Line, Rectangle
 from kivy.metrics import dp
 from kivy.uix.image import Image
 from kivy.uix.floatlayout import FloatLayout
@@ -23,13 +22,11 @@ from kivy.uix.popup import Popup
 from kivy.uix.scrollview import ScrollView
 from kivy.uix.textinput import TextInput
 from kivy.uix.progressbar import ProgressBar
-from kivy.uix.widget import Widget
-from kivy.animation import Animation
 
 # --------------------------
 # تنظیمات پایه
 # --------------------------
-Window.clearcolor = (0.1, 0.04, 0.18, 1)  # Warm purple base
+Window.clearcolor = (0.1, 0.04, 0.18, 1)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_FILE = os.path.join(BASE_DIR, "zekr_data.json")
@@ -154,7 +151,6 @@ class StyledBtn(Button):
 
 class FLabel(Label):
     def __init__(self, text="", size="16sp", clr=(1, 1, 1, 1), bold=False, **kwargs):
-        # halign/valign رو از kwargs جدا می‌کنیم که super اونا رو بذاره و ما دوباره override نکنیم
         halign = kwargs.pop('halign', 'center')
         valign = kwargs.pop('valign', 'middle')
         super().__init__(**kwargs)
@@ -166,8 +162,10 @@ class FLabel(Label):
         self.halign = halign
         self.valign = valign
         self.bind(size=self._upd)
+
     def _upd(self, *args):
         self.text_size = (self.width, None)
+
     def set_text(self, t):
         self.text = fa(t)
 
@@ -179,13 +177,13 @@ class TasbihApp(App):
         self.data = load_data()
         root = FloatLayout()
 
-        # پس‌زمینه گرم
+        # پس‌زمینه
         with root.canvas.before:
             Color(0.1, 0.04, 0.18, 1)
             self.bg_rect = Rectangle(pos=root.pos, size=root.size)
         root.bind(pos=self._update_bg, size=self._update_bg)
 
-        # عکس بنر مسجد
+        # بنر مسجد
         if os.path.exists(BANNER_FILE):
             banner = Image(source=BANNER_FILE, allow_stretch=True, keep_ratio=False,
                           color=(1, 1, 1, 0.8))
@@ -219,17 +217,17 @@ class TasbihApp(App):
 
         lay.add_widget(header)
 
-        # ==== فاصله‌ساز ۵۰dp ====
+        # ==== فاصله ۵۰dp ====
         lay.add_widget(Label(text="", size_hint_y=None, height=dp(50)))
 
         # ==== ذکر انتخاب شده ====
         self.lbl_active = FLabel(text="ذکر خود را انتخاب کنید", size="22sp", clr=(0.29, 0.87, 0.50, 1), bold=True)
         lay.add_widget(self.lbl_active)
 
-        # ==== فاصله بین ذکر و شمارنده ۲۰dp ====
+        # ==== فاصله ۲۰dp بین ذکر و شمارنده ====
         lay.add_widget(Label(text="", size_hint_y=None, height=dp(20)))
 
-        # ==== کارت شمارنده (شیشه‌ای) ====
+        # ==== کارت شمارنده ====
         card = GlassCard(radius=20)
         self.lbl_count = FLabel(text="۰", size="72sp", clr=(1, 1, 1, 1), bold=True)
         self.prog = ProgressBar(max=100, size_hint_y=None, height=dp(6))
@@ -239,7 +237,6 @@ class TasbihApp(App):
         card.add_widget(self.prog)
         card.add_widget(self.lbl_info)
 
-        # دکمه‌ها
         g1 = GridLayout(cols=2, spacing=dp(8), size_hint_y=None, height=dp(50))
         b1 = StyledBtn(text="+۱", bg=(0.66, 0.33, 0.97, 0.85))
         b1.bind(on_press=self.add_one)
@@ -260,12 +257,12 @@ class TasbihApp(App):
 
         lay.add_widget(card)
 
-        # ==== فاصله بعد از شمارنده ۱۵dp ====
+        # ==== فاصله ۱۵dp ====
         lay.add_widget(Label(text="", size_hint_y=None, height=dp(15)))
 
-        # ==== دکمه بانک اذکار (ارتفاع بیشتر) ====
+        # ==== دکمه بانک اذکار (بلندتر) ====
         bb = StyledBtn(text="📿 بانک اذکار مشکل‌گشا", bg=(0.49, 0.22, 0.93, 0.9))
-        bb.height = dp(56)  # بلندتر از ۴۸dp
+        bb.height = dp(56)
         bb.bind(on_press=self.open_bank)
         lay.add_widget(bb)
 
@@ -291,9 +288,6 @@ class TasbihApp(App):
         self.bg_rect.pos = instance.pos
         self.bg_rect.size = instance.size
 
-    # --------------------------
-    # توابع کمکی
-    # --------------------------
     def tick(self, dt):
         now = datetime.now()
         jy, jm, jd = gregorian_to_jalali(now.year, now.month, now.day)
@@ -354,9 +348,8 @@ class TasbihApp(App):
     def open_bank(self, *a):
         box = BoxLayout(orientation="vertical", padding=dp(14), spacing=dp(12))
 
-        # عنوان بانک اذکار با آیکون
+        # عنوان
         title_box = BoxLayout(orientation="horizontal", size_hint_y=None, height=dp(40), spacing=dp(6))
-        # آیکون رو با Label معمولی (بدون fa) می‌ذاریم که خراب نشه
         title_icon = Label(text="🔍", font_size="20sp", color=(1, 0.83, 0.31, 1), size_hint_x=None, width=dp(30), halign="center", valign="middle")
         title_text = FLabel(text="بانک اذکار", size="20sp", clr=(1, 0.83, 0.31, 1), bold=True, halign="right")
         title_box.add_widget(title_icon)
@@ -373,7 +366,6 @@ class TasbihApp(App):
             folder_buttons.append((card, folder, zekrs))
             inner.add_widget(card)
 
-        # اذکار دلخواه کاربر
         custom = self.data.get("custom_zekrs", [])
         custom_buttons = []
         if custom:
@@ -391,18 +383,18 @@ class TasbihApp(App):
         cls.bind(on_press=pop.dismiss)
         box.add_widget(cls)
 
+        # ==== فیکس اصلی: bind روی trigger (دکمه شفاف) نه خود FloatLayout ====
         for card, folder, zekrs in folder_buttons:
-            card.bind(on_press=lambda x, n=folder, z=zekrs, p=pop: self.show_zekrs(n, z, p))
+            card.trigger.bind(on_press=lambda x, n=folder, z=zekrs, p=pop: self.show_zekrs(n, z, p))
         for btn, z in custom_buttons:
             btn.bind(on_press=lambda x, zz=z, p=pop: self.pick_zekr(zz, p))
 
         pop.open()
 
     def _create_folder_card(self, folder_name):
-        """کارت پوشهٔ اذکار با آیکون و فلش"""
         root = FloatLayout(size_hint_y=None, height=dp(56))
 
-        # پس‌زمینهٔ کارت
+        # پس‌زمینه
         bg = BoxLayout(orientation="horizontal", padding=[dp(14), dp(8)], spacing=dp(10),
                        pos_hint={"x": 0, "y": 0}, size_hint=(1, 1))
         with bg.canvas.before:
@@ -417,17 +409,15 @@ class TasbihApp(App):
             bg.line.rounded_rectangle = (bg.x, bg.y, bg.width, bg.height, 18)
         bg.bind(pos=upd_bg, size=upd_bg)
 
-        # آیکون ایموجی — با Label معمولی (بدون fa) که خراب نشه
+        # جدا کردن ایموجی از اسم
         parts = folder_name.split(" ", 1)
         emoji = parts[0] if parts else ""
         name = parts[1] if len(parts) > 1 else folder_name
-        
+
+        # ==== فیکس: Label معمولی بدون font_name برای ایموجی ====
         icon_lbl = Label(text=emoji, font_size="22sp", color=(1, 1, 1, 1),
                          size_hint_x=None, width=dp(36), halign="center", valign="middle")
-        # نام پوشه
-        name_lbl = FLabel(text=name, size="16sp", clr=(0.95, 0.95, 0.95, 1),
-                          bold=True, halign="right")
-        # فلش راست — با Label معمولی
+        name_lbl = FLabel(text=name, size="16sp", clr=(0.95, 0.95, 0.95, 1), bold=True, halign="right")
         arrow_lbl = Label(text="›", font_size="28sp", color=(0.7, 0.7, 0.8, 0.6),
                           size_hint_x=None, width=dp(24), halign="center", valign="middle")
 
@@ -436,7 +426,7 @@ class TasbihApp(App):
         bg.add_widget(arrow_lbl)
         root.add_widget(bg)
 
-        # دکمهٔ شفاف روی کل کارت برای کلیک
+        # دکمه شفاف روی کل کارت
         btn = Button(background_normal="", background_color=(0, 0, 0, 0),
                      pos_hint={"x": 0, "y": 0}, size_hint=(1, 1))
         root.add_widget(btn)
@@ -445,7 +435,6 @@ class TasbihApp(App):
         return root
 
     def show_zekrs(self, name, zekrs, parent_popup=None):
-        # حذف ایموجی از عنوان
         clean_name = " ".join(name.split()[1:]) if " " in name else name
         box = BoxLayout(orientation="vertical", padding=dp(10), spacing=dp(8))
         sc = ScrollView()

@@ -154,14 +154,17 @@ class StyledBtn(Button):
 
 class FLabel(Label):
     def __init__(self, text="", size="16sp", clr=(1, 1, 1, 1), bold=False, **kwargs):
+        # halign/valign رو از kwargs جدا می‌کنیم که super اونا رو بذاره و ما دوباره override نکنیم
+        halign = kwargs.pop('halign', 'center')
+        valign = kwargs.pop('valign', 'middle')
         super().__init__(**kwargs)
         self.font_name = FONT_NAME
         self.text = fa(text)
         self.font_size = size
         self.color = clr
         self.bold = bold
-        self.halign = "center"
-        self.valign = "middle"
+        self.halign = halign
+        self.valign = valign
         self.bind(size=self._upd)
     def _upd(self, *args):
         self.text_size = (self.width, None)
@@ -195,8 +198,16 @@ class TasbihApp(App):
                        padding=[dp(16), dp(40), dp(16), dp(20)], size_hint_y=None)
         lay.bind(minimum_height=lay.setter("height"))
 
-        # ==== هدر: ساعت/تاریخ چپ، ذکر روز راست ====
+        # ==== هدر: ذکر روز راست، ساعت/تاریخ چپ ====
         header = BoxLayout(orientation="horizontal", size_hint_y=None, height=dp(50))
+
+        # سمت راست: ذکر روز (چون rtl، اولین فرزند سمت راست می‌ره)
+        right_box = BoxLayout(orientation="vertical", size_hint_x=0.5)
+        lbl_zekr_title = FLabel(text="✨ ذکر امروز", size="10sp", clr=(1, 0.83, 0.31, 0.8), halign="right")
+        self.lbl_week = FLabel(text="", size="14sp", clr=(1, 0.83, 0.31, 1), bold=True, halign="right")
+        right_box.add_widget(lbl_zekr_title)
+        right_box.add_widget(self.lbl_week)
+        header.add_widget(right_box)
 
         # سمت چپ: ساعت + تاریخ
         left_box = BoxLayout(orientation="vertical", size_hint_x=0.5)
@@ -206,22 +217,17 @@ class TasbihApp(App):
         left_box.add_widget(self.lbl_date)
         header.add_widget(left_box)
 
-        # سمت راست: ذکر روز
-        right_box = BoxLayout(orientation="vertical", size_hint_x=0.5)
-        lbl_zekr_title = FLabel(text="✨ ذکر امروز", size="10sp", clr=(1, 0.83, 0.31, 0.8), halign="right")
-        self.lbl_week = FLabel(text="", size="14sp", clr=(1, 0.83, 0.31, 1), bold=True, halign="right")
-        right_box.add_widget(lbl_zekr_title)
-        right_box.add_widget(self.lbl_week)
-        header.add_widget(right_box)
-
         lay.add_widget(header)
 
-        # فاصله برای پایین‌تر آمدن بخش میانه
-        lay.add_widget(Widget(size_hint_y=None, height=dp(50)))
+        # ==== فاصله‌ساز ۵۰dp ====
+        lay.add_widget(Label(text="", size_hint_y=None, height=dp(50)))
 
         # ==== ذکر انتخاب شده ====
         self.lbl_active = FLabel(text="ذکر خود را انتخاب کنید", size="22sp", clr=(0.29, 0.87, 0.50, 1), bold=True)
         lay.add_widget(self.lbl_active)
+
+        # ==== فاصله بین ذکر و شمارنده ۲۰dp ====
+        lay.add_widget(Label(text="", size_hint_y=None, height=dp(20)))
 
         # ==== کارت شمارنده (شیشه‌ای) ====
         card = GlassCard(radius=20)
@@ -254,8 +260,12 @@ class TasbihApp(App):
 
         lay.add_widget(card)
 
-        # ==== دکمه بانک اذکار ====
+        # ==== فاصله بعد از شمارنده ۱۵dp ====
+        lay.add_widget(Label(text="", size_hint_y=None, height=dp(15)))
+
+        # ==== دکمه بانک اذکار (ارتفاع بیشتر) ====
         bb = StyledBtn(text="📿 بانک اذکار مشکل‌گشا", bg=(0.49, 0.22, 0.93, 0.9))
+        bb.height = dp(56)  # بلندتر از ۴۸dp
         bb.bind(on_press=self.open_bank)
         lay.add_widget(bb)
 
@@ -346,7 +356,8 @@ class TasbihApp(App):
 
         # عنوان بانک اذکار با آیکون
         title_box = BoxLayout(orientation="horizontal", size_hint_y=None, height=dp(40), spacing=dp(6))
-        title_icon = FLabel(text="🔍", size="20sp", clr=(1, 0.83, 0.31, 1), size_hint_x=None, width=dp(30))
+        # آیکون رو با Label معمولی (بدون fa) می‌ذاریم که خراب نشه
+        title_icon = Label(text="🔍", font_size="20sp", color=(1, 0.83, 0.31, 1), size_hint_x=None, width=dp(30), halign="center", valign="middle")
         title_text = FLabel(text="بانک اذکار", size="20sp", clr=(1, 0.83, 0.31, 1), bold=True, halign="right")
         title_box.add_widget(title_icon)
         title_box.add_widget(title_text)
@@ -389,8 +400,6 @@ class TasbihApp(App):
 
     def _create_folder_card(self, folder_name):
         """کارت پوشهٔ اذکار با آیکون و فلش"""
-        from kivy.uix.floatlayout import FloatLayout
-
         root = FloatLayout(size_hint_y=None, height=dp(56))
 
         # پس‌زمینهٔ کارت
@@ -408,15 +417,19 @@ class TasbihApp(App):
             bg.line.rounded_rectangle = (bg.x, bg.y, bg.width, bg.height, 18)
         bg.bind(pos=upd_bg, size=upd_bg)
 
-        # آیکون ایموجی
-        icon_lbl = FLabel(text=folder_name.split()[0], size="22sp", clr=(1, 1, 1, 1),
-                          size_hint_x=None, width=dp(36), halign="center")
+        # آیکون ایموجی — با Label معمولی (بدون fa) که خراب نشه
+        parts = folder_name.split(" ", 1)
+        emoji = parts[0] if parts else ""
+        name = parts[1] if len(parts) > 1 else folder_name
+        
+        icon_lbl = Label(text=emoji, font_size="22sp", color=(1, 1, 1, 1),
+                         size_hint_x=None, width=dp(36), halign="center", valign="middle")
         # نام پوشه
-        name_lbl = FLabel(text=" ".join(folder_name.split()[1:]), size="16sp", clr=(0.95, 0.95, 0.95, 1),
+        name_lbl = FLabel(text=name, size="16sp", clr=(0.95, 0.95, 0.95, 1),
                           bold=True, halign="right")
-        # فلش راست
-        arrow_lbl = FLabel(text="›", size="28sp", clr=(0.7, 0.7, 0.8, 0.6),
-                           size_hint_x=None, width=dp(24), halign="center")
+        # فلش راست — با Label معمولی
+        arrow_lbl = Label(text="›", font_size="28sp", color=(0.7, 0.7, 0.8, 0.6),
+                          size_hint_x=None, width=dp(24), halign="center", valign="middle")
 
         bg.add_widget(icon_lbl)
         bg.add_widget(name_lbl)

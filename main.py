@@ -29,7 +29,7 @@ from kivy.animation import Animation
 # --------------------------
 # تنظیمات پایه
 # --------------------------
-Window.clearcolor = (0.1, 0.04, 0.18, 1)  # Warm purple base
+Window.clearcolor = (0.05, 0.05, 0.1, 1)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_FILE = os.path.join(BASE_DIR, "zekr_data.json")
@@ -117,9 +117,9 @@ class GlassCard(BoxLayout):
         self.size_hint_y = None
         self.bind(minimum_height=self.setter("height"))
         with self.canvas.before:
-            Color(1, 1, 1, 0.06)
+            Color(0.1, 0.1, 0.2, 0.5)
             self.bg = RoundedRectangle(radius=[radius])
-            Color(1, 1, 1, 0.1)
+            Color(1, 1, 1, 0.15)
             self.border = Line(rounded_rectangle=(0, 0, 100, 100, radius), width=1.2)
         self.bind(pos=self._update, size=self._update)
 
@@ -178,23 +178,24 @@ class TasbihApp(App):
         self.current_zekr_popup = None
         root = FloatLayout()
 
-        # پس‌زمینه گرم
+        # پس‌زمینه
         with root.canvas.before:
-            Color(0.1, 0.04, 0.18, 1)
+            Color(0.05, 0.05, 0.1, 1)
             self.bg_rect = Rectangle(pos=root.pos, size=root.size)
         root.bind(pos=self._update_bg, size=self._update_bg)
 
         # عکس بنر مسجد
         if os.path.exists(BANNER_FILE):
             banner = Image(source=BANNER_FILE, allow_stretch=True, keep_ratio=False,
-                          color=(1, 1, 1, 0.8))
+                          color=(1, 1, 1, 0.9))
             banner.pos_hint = {'x': 0, 'y': 0}
             banner.size_hint = (1, 1)
             root.add_widget(banner)
 
         scroll = ScrollView(do_scroll_x=False)
+        # پدینگ بالا بیشتر شد که کادر با ماه برخورد نکنه
         lay = BoxLayout(orientation="vertical", spacing=dp(10),
-                       padding=[dp(16), dp(40), dp(16), dp(20)], size_hint_y=None)
+                       padding=[dp(16), dp(80), dp(16), dp(20)], size_hint_y=None)
         lay.bind(minimum_height=lay.setter("height"))
 
         # ==== هدر: ساعت/تاریخ چپ، ذکر روز راست ====
@@ -203,14 +204,14 @@ class TasbihApp(App):
         # سمت چپ: ساعت + تاریخ
         left_box = BoxLayout(orientation="vertical", size_hint_x=0.5)
         self.lbl_time = FLabel(text="00:00:00", size="20sp", clr=(1, 0.83, 0.31, 1), bold=True, halign="left")
-        self.lbl_date = FLabel(text="", size="13sp", clr=(0.85, 0.85, 0.85, 0.8), halign="left")
+        self.lbl_date = FLabel(text="", size="13sp", clr=(0.85, 0.85, 0.85, 0.9), halign="left")
         left_box.add_widget(self.lbl_time)
         left_box.add_widget(self.lbl_date)
         header.add_widget(left_box)
 
         # سمت راست: ذکر روز
         right_box = BoxLayout(orientation="vertical", size_hint_x=0.5)
-        lbl_zekr_title = FLabel(text="✨ ذکر امروز", size="10sp", clr=(1, 0.83, 0.31, 0.8), halign="right")
+        lbl_zekr_title = FLabel(text="✨ ذکر امروز", size="10sp", clr=(1, 0.83, 0.31, 0.9), halign="right")
         self.lbl_week = FLabel(text="", size="14sp", clr=(1, 0.83, 0.31, 1), bold=True, halign="right")
         right_box.add_widget(lbl_zekr_title)
         right_box.add_widget(self.lbl_week)
@@ -222,11 +223,11 @@ class TasbihApp(App):
         self.lbl_active = FLabel(text="ذکر خود را انتخاب کنید", size="22sp", clr=(0.29, 0.87, 0.50, 1), bold=True)
         lay.add_widget(self.lbl_active)
 
-        # ==== کارت شمارنده (شیشه‌ای) ====
+        # ==== کارت شمارنده ====
         card = GlassCard(radius=20)
         self.lbl_count = FLabel(text="۰", size="72sp", clr=(1, 1, 1, 1), bold=True)
         self.prog = ProgressBar(max=100, size_hint_y=None, height=dp(6))
-        self.lbl_info = FLabel(text="هدف: ۱۰۰", size="12sp", clr=(0.7, 0.8, 1, 0.6))
+        self.lbl_info = FLabel(text="هدف: ۱۰۰", size="12sp", clr=(0.8, 0.8, 0.9, 0.8))
 
         card.add_widget(self.lbl_count)
         card.add_widget(self.prog)
@@ -234,18 +235,18 @@ class TasbihApp(App):
 
         # دکمه‌ها
         g1 = GridLayout(cols=2, spacing=dp(8), size_hint_y=None, height=dp(50))
-        b1 = StyledBtn(text="+۱", bg=(0.66, 0.33, 0.97, 0.85))
+        b1 = StyledBtn(text="+۱", bg=(0.4, 0.2, 0.9, 0.9))
         b1.bind(on_press=self.add_one)
-        b2 = StyledBtn(text="-۱", bg=(0.39, 0.31, 0.47, 0.7))
+        b2 = StyledBtn(text="-۱", bg=(0.3, 0.3, 0.4, 0.8))
         b2.bind(on_press=self.sub_one)
         g1.add_widget(b1)
         g1.add_widget(b2)
         card.add_widget(g1)
 
         g2 = GridLayout(cols=2, spacing=dp(8), size_hint_y=None, height=dp(50))
-        b3 = StyledBtn(text="ریست", bg=(0.86, 0.15, 0.15, 0.85))
+        b3 = StyledBtn(text="ریست", bg=(0.8, 0.15, 0.15, 0.9))
         b3.bind(on_press=self.reset)
-        b4 = StyledBtn(text="هدف", bg=(0.13, 0.64, 0.29, 0.85))
+        b4 = StyledBtn(text="هدف", bg=(0.1, 0.6, 0.3, 0.9))
         b4.bind(on_press=self.set_target)
         g2.add_widget(b3)
         g2.add_widget(b4)
@@ -254,7 +255,7 @@ class TasbihApp(App):
         lay.add_widget(card)
 
         # ==== دکمه بانک اذکار ====
-        bb = StyledBtn(text="📿 بانک اذکار مشکل‌گشا", bg=(0.49, 0.22, 0.93, 0.9))
+        bb = StyledBtn(text="📿 بانک اذکار مشکل‌گشا", bg=(0.5, 0.2, 0.8, 0.9))
         bb.bind(on_press=self.open_bank)
         lay.add_widget(bb)
 
@@ -263,7 +264,7 @@ class TasbihApp(App):
         support_card.padding = dp(12)
         support_card.spacing = dp(6)
         lbl_support = FLabel(text="❤️ لطفاً از ما حمایت کنید", size="13sp", clr=(1, 1, 1, 1))
-        btn_support = StyledBtn(text="👉 امتیاز دادن / عضویت در کانال", bg=(0.2, 0.15, 0.3, 0.6))
+        btn_support = StyledBtn(text="👉 امتیاز دادن / عضویت در کانال", bg=(0.2, 0.15, 0.35, 0.7))
         btn_support.bind(on_press=self.open_support)
         support_card.add_widget(lbl_support)
         support_card.add_widget(btn_support)
@@ -320,7 +321,7 @@ class TasbihApp(App):
         inp = TextInput(text=str(self.data["daily_target"]), multiline=False, input_filter="int", font_name=FONT_NAME, font_size="18sp")
         btn = StyledBtn(text="تایید", bg=(0.1, 0.6, 0.4, 1))
         # کادر هدف پایین‌تر
-        pop = Popup(title=fa("تنظیم هدف"), content=box, size_hint=(0.8, 0.35), pos_hint={'center_x': 0.5, 'y': 0.15})
+        pop = Popup(title=fa("تنظیم هدف"), content=box, size_hint=(0.85, 0.4), pos_hint={'center_x': 0.5, 'y': 0.1})
         box.add_widget(inp)
         box.add_widget(btn)
         btn.bind(on_press=lambda x: self._save_target(inp.text, pop))
@@ -339,46 +340,46 @@ class TasbihApp(App):
             pass
 
     # --------------------------
-    # بانک اذkar - Bottom Sheet Style
+    # بانک اذkar - Bottom Sheet
     # --------------------------
     def open_bank(self, *a):
-        box = BoxLayout(orientation="vertical", padding=dp(10), spacing=dp(10))
+        box = BoxLayout(orientation="vertical", padding=dp(12), spacing=dp(10))
         sc = ScrollView()
         inner = BoxLayout(orientation="vertical", size_hint_y=None, spacing=dp(8))
         inner.bind(minimum_height=inner.setter("height"))
 
         for folder, zekrs in ZEKR_FOLDERS.items():
-            btn = StyledBtn(text=folder, bg=(0.2, 0.15, 0.35, 0.9))
+            btn = StyledBtn(text=folder, bg=(0.25, 0.2, 0.4, 0.9))
             btn.bind(on_press=lambda x, n=folder, z=zekrs: self.show_zekrs(n, z))
             inner.add_widget(btn)
 
         sc.add_widget(inner)
         box.add_widget(sc)
 
-        # بانک به سبک bottom sheet - پایین‌تر و شبیه آرام تسبیح
-        pop = Popup(title=fa("📿 بانک اذکار"), content=box, size_hint=(0.92, 0.65),
-                    pos_hint={'center_x': 0.5, 'y': 0.05}, auto_dismiss=True)
+        # بانک به سبک bottom sheet - پایین صفحه
+        pop = Popup(title=fa("📿 بانک اذکار"), content=box, size_hint=(0.95, 0.6),
+                    pos_hint={'center_x': 0.5, 'y': 0.02}, auto_dismiss=True)
         self.current_bank_popup = pop
         pop.open()
 
     def show_zekrs(self, name, zekrs):
-        box = BoxLayout(orientation="vertical", padding=dp(10), spacing=dp(8))
+        box = BoxLayout(orientation="vertical", padding=dp(12), spacing=dp(8))
         sc = ScrollView()
         inner = BoxLayout(orientation="vertical", size_hint_y=None, spacing=dp(6))
         inner.bind(minimum_height=inner.setter("height"))
 
         for z in zekrs:
-            btn = StyledBtn(text=z, bg=(0.1, 0.15, 0.25, 0.9))
+            btn = StyledBtn(text=z, bg=(0.15, 0.2, 0.35, 0.9))
             btn.bind(on_press=lambda x, zz=z: self.pick_zekr(zz))
             inner.add_widget(btn)
 
         sc.add_widget(inner)
         box.add_widget(sc)
-        back = StyledBtn(text="برگشت", bg=(0.35, 0.3, 0.4, 0.9))
+        back = StyledBtn(text="برگشت", bg=(0.35, 0.3, 0.45, 0.9))
 
-        # لیست ذکرها هم پایین‌تر
-        pop = Popup(title=fa(name), content=box, size_hint=(0.9, 0.6),
-                    pos_hint={'center_x': 0.5, 'y': 0.08}, auto_dismiss=True)
+        # لیست ذکرها هم پایین
+        pop = Popup(title=fa(name), content=box, size_hint=(0.92, 0.55),
+                    pos_hint={'center_x': 0.5, 'y': 0.05}, auto_dismiss=True)
         self.current_zekr_popup = pop
         back.bind(on_press=pop.dismiss)
         box.add_widget(back)

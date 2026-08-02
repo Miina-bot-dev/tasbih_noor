@@ -95,11 +95,12 @@ WEEKLY_ZEKR = {
     4: "اَللّهُمَّ صَلِّ عَلی مُحَمَّد وَ آلِ مُحَمَّد",
 }
 
+# ==== آیکون‌ها با کاراکترهای Unicode سازگار با فونت پیش‌فرض Kivy ====
 ZEKR_FOLDERS = {
-    "🌟 صلوات": ["اَللّهُمَّ صَلِّ عَلی مُحَمَّد وَ آلِ مُحَمَّد", "اَللّهُمَّ صَلِّ عَلی مُحَمَّد", "صَلَّی اللهُ عَلَیهِ وَ آلِهِ"],
-    "💰 رزق و روزی": ["یا رزاق", "یا غنی", "یا واسع", "یا فتاح", "استغفرالله"],
-    "🔓 گشایش مشکلات": ["یا فتاح", "یا کاشف الکرب", "یا مجیب", "یا قاضی الحاجات"],
-    "🕊️ آرامش قلب": ["یا سلام", "یا لطیف", "یا صبور", "یا نور", "یا رؤوف"],
+    "★ صلوات": ["اَللّهُمَّ صَلِّ عَلی مُحَمَّد وَ آلِ مُحَمَّد", "اَللّهُمَّ صَلِّ عَلی مُحَمَّد", "صَلَّی اللهُ عَلَیهِ وَ آلِهِ"],
+    "● رزق و روزی": ["یا رزاق", "یا غنی", "یا واسع", "یا فتاح", "استغفرالله"],
+    "◆ گشایش مشکلات": ["یا فتاح", "یا کاشف الکرب", "یا مجیب", "یا قاضی الحاجات"],
+    "❖ آرامش قلب": ["یا سلام", "یا لطیف", "یا صبور", "یا نور", "یا رؤوف"],
 }
 
 # --------------------------
@@ -199,9 +200,9 @@ class TasbihApp(App):
         # ==== هدر: ذکر روز راست، ساعت/تاریخ چپ ====
         header = BoxLayout(orientation="horizontal", size_hint_y=None, height=dp(50))
 
-        # سمت راست: ذکر روز (چون rtl، اولین فرزند سمت راست می‌ره)
+        # سمت راست: ذکر روز
         right_box = BoxLayout(orientation="vertical", size_hint_x=0.5)
-        lbl_zekr_title = FLabel(text="✨ ذکر امروز", size="10sp", clr=(1, 0.83, 0.31, 0.8), halign="right")
+        lbl_zekr_title = FLabel(text="ذکر امروز", size="10sp", clr=(1, 0.83, 0.31, 0.8), halign="right")
         self.lbl_week = FLabel(text="", size="14sp", clr=(1, 0.83, 0.31, 1), bold=True, halign="right")
         right_box.add_widget(lbl_zekr_title)
         right_box.add_widget(self.lbl_week)
@@ -261,7 +262,7 @@ class TasbihApp(App):
         lay.add_widget(Label(text="", size_hint_y=None, height=dp(15)))
 
         # ==== دکمه بانک اذکار (بلندتر) ====
-        bb = StyledBtn(text="📿 بانک اذکار مشکل‌گشا", bg=(0.49, 0.22, 0.93, 0.9))
+        bb = StyledBtn(text="بانک اذکار مشکل‌گشا", bg=(0.49, 0.22, 0.93, 0.9))
         bb.height = dp(56)
         bb.bind(on_press=self.open_bank)
         lay.add_widget(bb)
@@ -270,8 +271,8 @@ class TasbihApp(App):
         support_card = GlassCard(radius=14)
         support_card.padding = dp(12)
         support_card.spacing = dp(6)
-        lbl_support = FLabel(text="❤️ لطفاً از ما حمایت کنید", size="13sp", clr=(1, 1, 1, 1))
-        btn_support = StyledBtn(text="👉 امتیاز دادن / عضویت در کانال", bg=(0.2, 0.15, 0.3, 0.6))
+        lbl_support = FLabel(text="لطفاً از ما حمایت کنید", size="13sp", clr=(1, 1, 1, 1))
+        btn_support = StyledBtn(text="امتیاز دادن / عضویت در کانال", bg=(0.2, 0.15, 0.3, 0.6))
         btn_support.bind(on_press=self.open_support)
         support_card.add_widget(lbl_support)
         support_card.add_widget(btn_support)
@@ -350,7 +351,7 @@ class TasbihApp(App):
 
         # عنوان
         title_box = BoxLayout(orientation="horizontal", size_hint_y=None, height=dp(40), spacing=dp(6))
-        title_icon = Label(text="🔍", font_size="20sp", color=(1, 0.83, 0.31, 1), size_hint_x=None, width=dp(30), halign="center", valign="middle")
+        title_icon = Label(text="◈", font_size="20sp", color=(1, 0.83, 0.31, 1), size_hint_x=None, width=dp(30), halign="center", valign="middle")
         title_text = FLabel(text="بانک اذکار", size="20sp", clr=(1, 0.83, 0.31, 1), bold=True, halign="right")
         title_box.add_widget(title_icon)
         title_box.add_widget(title_text)
@@ -383,7 +384,6 @@ class TasbihApp(App):
         cls.bind(on_press=pop.dismiss)
         box.add_widget(cls)
 
-        # ==== فیکس اصلی: bind روی trigger (دکمه شفاف) نه خود FloatLayout ====
         for card, folder, zekrs in folder_buttons:
             card.trigger.bind(on_press=lambda x, n=folder, z=zekrs, p=pop: self.show_zekrs(n, z, p))
         for btn, z in custom_buttons:
@@ -394,7 +394,6 @@ class TasbihApp(App):
     def _create_folder_card(self, folder_name):
         root = FloatLayout(size_hint_y=None, height=dp(56))
 
-        # پس‌زمینه
         bg = BoxLayout(orientation="horizontal", padding=[dp(14), dp(8)], spacing=dp(10),
                        pos_hint={"x": 0, "y": 0}, size_hint=(1, 1))
         with bg.canvas.before:
@@ -409,13 +408,12 @@ class TasbihApp(App):
             bg.line.rounded_rectangle = (bg.x, bg.y, bg.width, bg.height, 18)
         bg.bind(pos=upd_bg, size=upd_bg)
 
-        # جدا کردن ایموجی از اسم
         parts = folder_name.split(" ", 1)
-        emoji = parts[0] if parts else ""
+        symbol = parts[0] if parts else ""
         name = parts[1] if len(parts) > 1 else folder_name
 
-        # ==== فیکس: Label معمولی بدون font_name برای ایموجی ====
-        icon_lbl = Label(text=emoji, font_size="22sp", color=(1, 1, 1, 1),
+        # ==== آیکون با Label معمولی (فونت پیش‌فرض Kivy = DejaVuSans) ====
+        icon_lbl = Label(text=symbol, font_size="22sp", color=(1, 1, 1, 1),
                          size_hint_x=None, width=dp(36), halign="center", valign="middle")
         name_lbl = FLabel(text=name, size="16sp", clr=(0.95, 0.95, 0.95, 1), bold=True, halign="right")
         arrow_lbl = Label(text="›", font_size="28sp", color=(0.7, 0.7, 0.8, 0.6),
@@ -426,7 +424,6 @@ class TasbihApp(App):
         bg.add_widget(arrow_lbl)
         root.add_widget(bg)
 
-        # دکمه شفاف روی کل کارت
         btn = Button(background_normal="", background_color=(0, 0, 0, 0),
                      pos_hint={"x": 0, "y": 0}, size_hint=(1, 1))
         root.add_widget(btn)

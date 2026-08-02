@@ -347,18 +347,20 @@ class TasbihApp(App):
         inner = BoxLayout(orientation="vertical", size_hint_y=None, spacing=dp(8))
         inner.bind(minimum_height=inner.setter("height"))
 
+        folder_buttons = []
         for folder, zekrs in ZEKR_FOLDERS.items():
             btn = StyledBtn(text=folder, bg=(0.2, 0.15, 0.35, 0.9))
-            btn.bind(on_press=lambda x, n=folder, z=zekrs: self.show_zekrs(n, z))
+            folder_buttons.append((btn, folder, zekrs))
             inner.add_widget(btn)
 
         # اذکار دلخواه کاربر
         custom = self.data.get("custom_zekrs", [])
+        custom_buttons = []
         if custom:
             inner.add_widget(FLabel(text="──── ذکرهای شما ────", size="14sp", clr=(0.6, 0.7, 0.9, 0.7)))
             for z in custom:
                 btn = StyledBtn(text=z, bg=(0.15, 0.3, 0.25, 0.9))
-                btn.bind(on_press=lambda x, zz=z: self.pick_zekr(zz))
+                custom_buttons.append((btn, z))
                 inner.add_widget(btn)
 
         sc.add_widget(inner)
@@ -367,17 +369,24 @@ class TasbihApp(App):
         pop = Popup(title=fa("بانک اذکار"), content=box, size_hint=(0.9, 0.75))
         cls.bind(on_press=pop.dismiss)
         box.add_widget(cls)
+
+        for btn, folder, zekrs in folder_buttons:
+            btn.bind(on_press=lambda x, n=folder, z=zekrs, p=pop: self.show_zekrs(n, z, p))
+        for btn, z in custom_buttons:
+            btn.bind(on_press=lambda x, zz=z, p=pop: self.pick_zekr(zz, p))
+
         pop.open()
 
-    def show_zekrs(self, name, zekrs):
+    def show_zekrs(self, name, zekrs, parent_popup=None):
         box = BoxLayout(orientation="vertical", padding=dp(10), spacing=dp(8))
         sc = ScrollView()
         inner = BoxLayout(orientation="vertical", size_hint_y=None, spacing=dp(6))
         inner.bind(minimum_height=inner.setter("height"))
 
+        zekr_buttons = []
         for z in zekrs:
             btn = StyledBtn(text=z, bg=(0.1, 0.15, 0.25, 0.9))
-            btn.bind(on_press=lambda x, zz=z: self.pick_zekr(zz))
+            zekr_buttons.append((btn, z))
             inner.add_widget(btn)
 
         sc.add_widget(inner)
@@ -386,11 +395,19 @@ class TasbihApp(App):
         pop = Popup(title=fa(name), content=box, size_hint=(0.88, 0.72))
         back.bind(on_press=pop.dismiss)
         box.add_widget(back)
+
+        for btn, z in zekr_buttons:
+            btn.bind(on_press=lambda x, zz=z, p=pop, pp=parent_popup: self.pick_zekr(zz, p, pp))
+
         pop.open()
 
-    def pick_zekr(self, zekr_text):
+    def pick_zekr(self, zekr_text, popup=None, parent_popup=None):
         self.lbl_active.set_text(zekr_text)
         self.lbl_active.color = (0.29, 0.95, 0.6, 1)
+        if popup:
+            popup.dismiss()
+        if parent_popup:
+            parent_popup.dismiss()
 
 if __name__ == "__main__":
     TasbihApp().run()

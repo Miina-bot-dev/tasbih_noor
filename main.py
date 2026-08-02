@@ -317,7 +317,8 @@ class TasbihApp(App):
         box = BoxLayout(orientation="vertical", spacing=dp(12), padding=dp(16))
         inp = TextInput(text=str(self.data["daily_target"]), multiline=False, input_filter="int", font_name=FONT_NAME, font_size="18sp")
         btn = StyledBtn(text="تایید", bg=(0.1, 0.6, 0.4, 1))
-        pop = Popup(title=fa("تنظیم هدف"), content=box, size_hint=(0.8, 0.35))
+        # پایین‌تر آمدن پنجره هدف
+        pop = Popup(title=fa("تنظیم هدف"), content=box, size_hint=(0.8, 0.35), pos_hint={'center_x': 0.5, 'y': 0.25})
         box.add_widget(inp)
         box.add_widget(btn)
         btn.bind(on_press=lambda x: self._save_target(inp.text, pop))
@@ -331,7 +332,7 @@ class TasbihApp(App):
 
     def open_support(self, *a):
         try:
-            webbrowser.open("https://t.me/zekarnoor")
+            webbrowser.open("https://ble.ir/zekarnoor")
         except:
             pass
 

@@ -99,10 +99,10 @@ WEEKLY_ZEKR = {
 }
 
 ZEKR_FOLDERS = {
-    "صلوات": ["اَللّهُمَّ صَلِّ عَلی مُحَمَّد وَ آلِ مُحَمَّد", "اَللّهُمَّ صَلِّ عَلی مُحَمَّد", "صَلَّی اللهُ عَلَیهِ وَ آلِهِ"],
-    "رزق و روزی": ["یا رزاق", "یا غنی", "یا واسع", "یا فتاح", "استغفرالله"],
-    "گشایش مشکلات": ["یا فتاح", "یا کاشف الکرب", "یا مجیب", "یا قاضی الحاجات"],
-    "آرامش قلب": ["یا سلام", "یا لطیف", "یا صبور", "یا نور", "یا رؤوف"],
+    "🌟 صلوات": ["اَللّهُمَّ صَلِّ عَلی مُحَمَّد وَ آلِ مُحَمَّد", "اَللّهُمَّ صَلِّ عَلی مُحَمَّد", "صَلَّی اللهُ عَلَیهِ وَ آلِهِ"],
+    "💰 رزق و روزی": ["یا رزاق", "یا غنی", "یا واسع", "یا فتاح", "استغفرالله"],
+    "🔓 گشایش مشکلات": ["یا فتاح", "یا کاشف الکرب", "یا مجیب", "یا قاضی الحاجات"],
+    "🕊️ آرامش قلب": ["یا سلام", "یا لطیف", "یا صبور", "یا نور", "یا رؤوف"],
 }
 
 # --------------------------
@@ -342,16 +342,25 @@ class TasbihApp(App):
     # بانک اذکار
     # --------------------------
     def open_bank(self, *a):
-        box = BoxLayout(orientation="vertical", padding=dp(10), spacing=dp(10))
+        box = BoxLayout(orientation="vertical", padding=dp(14), spacing=dp(12))
+
+        # عنوان بانک اذکار با آیکون
+        title_box = BoxLayout(orientation="horizontal", size_hint_y=None, height=dp(40), spacing=dp(6))
+        title_icon = FLabel(text="🔍", size="20sp", clr=(1, 0.83, 0.31, 1), size_hint_x=None, width=dp(30))
+        title_text = FLabel(text="بانک اذکار", size="20sp", clr=(1, 0.83, 0.31, 1), bold=True, halign="right")
+        title_box.add_widget(title_icon)
+        title_box.add_widget(title_text)
+        box.add_widget(title_box)
+
         sc = ScrollView()
-        inner = BoxLayout(orientation="vertical", size_hint_y=None, spacing=dp(8))
+        inner = BoxLayout(orientation="vertical", size_hint_y=None, spacing=dp(10))
         inner.bind(minimum_height=inner.setter("height"))
 
         folder_buttons = []
         for folder, zekrs in ZEKR_FOLDERS.items():
-            btn = StyledBtn(text=folder, bg=(0.2, 0.15, 0.35, 0.9))
-            folder_buttons.append((btn, folder, zekrs))
-            inner.add_widget(btn)
+            card = self._create_folder_card(folder)
+            folder_buttons.append((card, folder, zekrs))
+            inner.add_widget(card)
 
         # اذکار دلخواه کاربر
         custom = self.data.get("custom_zekrs", [])
@@ -365,19 +374,66 @@ class TasbihApp(App):
 
         sc.add_widget(inner)
         box.add_widget(sc)
+
         cls = StyledBtn(text="بستن", bg=(0.35, 0.3, 0.4, 0.9))
-        pop = Popup(title=fa("بانک اذکار"), content=box, size_hint=(0.9, 0.75))
+        pop = Popup(title="", content=box, size_hint=(0.92, 0.78), separator_height=0)
         cls.bind(on_press=pop.dismiss)
         box.add_widget(cls)
 
-        for btn, folder, zekrs in folder_buttons:
-            btn.bind(on_press=lambda x, n=folder, z=zekrs, p=pop: self.show_zekrs(n, z, p))
+        for card, folder, zekrs in folder_buttons:
+            card.bind(on_press=lambda x, n=folder, z=zekrs, p=pop: self.show_zekrs(n, z, p))
         for btn, z in custom_buttons:
             btn.bind(on_press=lambda x, zz=z, p=pop: self.pick_zekr(zz, p))
 
         pop.open()
 
+    def _create_folder_card(self, folder_name):
+        """کارت پوشهٔ اذکار با آیکون و فلش"""
+        from kivy.uix.floatlayout import FloatLayout
+
+        root = FloatLayout(size_hint_y=None, height=dp(56))
+
+        # پس‌زمینهٔ کارت
+        bg = BoxLayout(orientation="horizontal", padding=[dp(14), dp(8)], spacing=dp(10),
+                       pos_hint={"x": 0, "y": 0}, size_hint=(1, 1))
+        with bg.canvas.before:
+            Color(0.15, 0.10, 0.25, 0.95)
+            bg.rect = RoundedRectangle(radius=[18])
+            Color(1, 1, 1, 0.06)
+            bg.line = Line(rounded_rectangle=(0, 0, 100, 100, 18), width=1)
+
+        def upd_bg(*a):
+            bg.rect.pos = bg.pos
+            bg.rect.size = bg.size
+            bg.line.rounded_rectangle = (bg.x, bg.y, bg.width, bg.height, 18)
+        bg.bind(pos=upd_bg, size=upd_bg)
+
+        # آیکون ایموجی
+        icon_lbl = FLabel(text=folder_name.split()[0], size="22sp", clr=(1, 1, 1, 1),
+                          size_hint_x=None, width=dp(36), halign="center")
+        # نام پوشه
+        name_lbl = FLabel(text=" ".join(folder_name.split()[1:]), size="16sp", clr=(0.95, 0.95, 0.95, 1),
+                          bold=True, halign="right")
+        # فلش راست
+        arrow_lbl = FLabel(text="›", size="28sp", clr=(0.7, 0.7, 0.8, 0.6),
+                           size_hint_x=None, width=dp(24), halign="center")
+
+        bg.add_widget(icon_lbl)
+        bg.add_widget(name_lbl)
+        bg.add_widget(arrow_lbl)
+        root.add_widget(bg)
+
+        # دکمهٔ شفاف روی کل کارت برای کلیک
+        btn = Button(background_normal="", background_color=(0, 0, 0, 0),
+                     pos_hint={"x": 0, "y": 0}, size_hint=(1, 1))
+        root.add_widget(btn)
+        root.trigger = btn
+
+        return root
+
     def show_zekrs(self, name, zekrs, parent_popup=None):
+        # حذف ایموجی از عنوان
+        clean_name = " ".join(name.split()[1:]) if " " in name else name
         box = BoxLayout(orientation="vertical", padding=dp(10), spacing=dp(8))
         sc = ScrollView()
         inner = BoxLayout(orientation="vertical", size_hint_y=None, spacing=dp(6))
@@ -392,7 +448,7 @@ class TasbihApp(App):
         sc.add_widget(inner)
         box.add_widget(sc)
         back = StyledBtn(text="برگشت", bg=(0.35, 0.3, 0.4, 0.9))
-        pop = Popup(title=fa(name), content=box, size_hint=(0.88, 0.72))
+        pop = Popup(title=fa(clean_name), content=box, size_hint=(0.88, 0.72))
         back.bind(on_press=pop.dismiss)
         box.add_widget(back)
 

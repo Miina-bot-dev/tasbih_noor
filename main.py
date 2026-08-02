@@ -192,7 +192,7 @@ class TasbihApp(App):
 
         scroll = ScrollView(do_scroll_x=False)
         lay = BoxLayout(orientation="vertical", spacing=dp(10),
-                       padding=[dp(16), dp(60), dp(16), dp(20)], size_hint_y=None)
+                       padding=[dp(16), dp(40), dp(16), dp(20)], size_hint_y=None)
         lay.bind(minimum_height=lay.setter("height"))
 
         # ==== هدر: ساعت/تاریخ چپ، ذکر روز راست ====
@@ -215,6 +215,9 @@ class TasbihApp(App):
         header.add_widget(right_box)
 
         lay.add_widget(header)
+
+        # فاصله برای پایین‌تر آمدن بخش میانه
+        lay.add_widget(Widget(size_hint_y=None, height=dp(50)))
 
         # ==== ذکر انتخاب شده ====
         self.lbl_active = FLabel(text="ذکر خود را انتخاب کنید", size="22sp", clr=(0.29, 0.87, 0.50, 1), bold=True)
@@ -317,8 +320,7 @@ class TasbihApp(App):
         box = BoxLayout(orientation="vertical", spacing=dp(12), padding=dp(16))
         inp = TextInput(text=str(self.data["daily_target"]), multiline=False, input_filter="int", font_name=FONT_NAME, font_size="18sp")
         btn = StyledBtn(text="تایید", bg=(0.1, 0.6, 0.4, 1))
-        # پایین‌تر آمدن پنجره هدف
-        pop = Popup(title=fa("تنظیم هدف"), content=box, size_hint=(0.8, 0.35), pos_hint={'center_x': 0.5, 'y': 0.25})
+        pop = Popup(title=fa("تنظیم هدف"), content=box, size_hint=(0.8, 0.35))
         box.add_widget(inp)
         box.add_widget(btn)
         btn.bind(on_press=lambda x: self._save_target(inp.text, pop))

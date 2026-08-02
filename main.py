@@ -174,6 +174,8 @@ class FLabel(Label):
 class TasbihApp(App):
     def build(self):
         self.data = load_data()
+        self.current_bank_popup = None
+        self.current_zekr_popup = None
         root = FloatLayout()
 
         # پس‌زمینه گرم
@@ -317,8 +319,8 @@ class TasbihApp(App):
         box = BoxLayout(orientation="vertical", spacing=dp(12), padding=dp(16))
         inp = TextInput(text=str(self.data["daily_target"]), multiline=False, input_filter="int", font_name=FONT_NAME, font_size="18sp")
         btn = StyledBtn(text="تایید", bg=(0.1, 0.6, 0.4, 1))
-        # پایین‌تر آمدن پنجره هدف
-        pop = Popup(title=fa("تنظیم هدف"), content=box, size_hint=(0.8, 0.35), pos_hint={'center_x': 0.5, 'y': 0.25})
+        # کادر هدف پایین‌تر
+        pop = Popup(title=fa("تنظیم هدف"), content=box, size_hint=(0.8, 0.35), pos_hint={'center_x': 0.5, 'y': 0.15})
         box.add_widget(inp)
         box.add_widget(btn)
         btn.bind(on_press=lambda x: self._save_target(inp.text, pop))
@@ -337,7 +339,7 @@ class TasbihApp(App):
             pass
 
     # --------------------------
-    # بانک اذکار
+    # بانک اذkar - Bottom Sheet Style
     # --------------------------
     def open_bank(self, *a):
         box = BoxLayout(orientation="vertical", padding=dp(10), spacing=dp(10))
@@ -350,21 +352,13 @@ class TasbihApp(App):
             btn.bind(on_press=lambda x, n=folder, z=zekrs: self.show_zekrs(n, z))
             inner.add_widget(btn)
 
-        # اذکار دلخواه کاربر
-        custom = self.data.get("custom_zekrs", [])
-        if custom:
-            inner.add_widget(FLabel(text="──── ذکرهای شما ────", size="14sp", clr=(0.6, 0.7, 0.9, 0.7)))
-            for z in custom:
-                btn = StyledBtn(text=z, bg=(0.15, 0.3, 0.25, 0.9))
-                btn.bind(on_press=lambda x, zz=z: self.pick_zekr(zz))
-                inner.add_widget(btn)
-
         sc.add_widget(inner)
         box.add_widget(sc)
-        cls = StyledBtn(text="بستن", bg=(0.35, 0.3, 0.4, 0.9))
-        pop = Popup(title=fa("بانک اذکار"), content=box, size_hint=(0.9, 0.75))
-        cls.bind(on_press=pop.dismiss)
-        box.add_widget(cls)
+
+        # بانک به سبک bottom sheet - پایین‌تر و شبیه آرام تسبیح
+        pop = Popup(title=fa("📿 بانک اذکار"), content=box, size_hint=(0.92, 0.65),
+                    pos_hint={'center_x': 0.5, 'y': 0.05}, auto_dismiss=True)
+        self.current_bank_popup = pop
         pop.open()
 
     def show_zekrs(self, name, zekrs):
@@ -381,7 +375,11 @@ class TasbihApp(App):
         sc.add_widget(inner)
         box.add_widget(sc)
         back = StyledBtn(text="برگشت", bg=(0.35, 0.3, 0.4, 0.9))
-        pop = Popup(title=fa(name), content=box, size_hint=(0.88, 0.72))
+
+        # لیست ذکرها هم پایین‌تر
+        pop = Popup(title=fa(name), content=box, size_hint=(0.9, 0.6),
+                    pos_hint={'center_x': 0.5, 'y': 0.08}, auto_dismiss=True)
+        self.current_zekr_popup = pop
         back.bind(on_press=pop.dismiss)
         box.add_widget(back)
         pop.open()
@@ -389,6 +387,14 @@ class TasbihApp(App):
     def pick_zekr(self, zekr_text):
         self.lbl_active.set_text(zekr_text)
         self.lbl_active.color = (0.29, 0.95, 0.6, 1)
+        # بستن popup ها
+        if self.current_zekr_popup:
+            self.current_zekr_popup.dismiss()
+        if self.current_bank_popup:
+            self.current_bank_popup.dismiss()
+        self.data["count"] = 0
+        save_data(self.data)
+        self.refresh()
 
 if __name__ == "__main__":
     TasbihApp().run()

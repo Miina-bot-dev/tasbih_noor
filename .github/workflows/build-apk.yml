@@ -41,7 +41,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Tasbih-Signed-APK
-          path: bin/*-release-signed.apk
+          path: bin/*.apk
 
       - name: Upload Keystore
         uses: actions/upload-artifact@v4

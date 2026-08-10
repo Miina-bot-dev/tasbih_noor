@@ -29,22 +29,21 @@ jobs:
           restore-keys: |
             buildozer-
 
-      - name: Build APK with Buildozer
+      - name: Build Release APK with Buildozer
         run: |
           docker run --rm \
             -v "$(pwd):/home/user/hostcwd" \
             -v "$HOME/.buildozer:/home/user/.buildozer" \
             ghcr.io/kivy/buildozer:latest \
-            android debug
+            android release
 
-      - name: Sign APK
-        run: |
-          jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 -keystore tasbih-release.keystore -storepass 123456 bin/*.apk tasbih-key
+      - name: Check output files
+        run: ls -la bin/
 
-      - name: Upload Signed APK
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Tasbih-Signed-APK
+          name: Tasbih-Release-APK
           path: bin/*.apk
 
       - name: Upload Keystore

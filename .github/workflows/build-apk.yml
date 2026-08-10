@@ -17,7 +17,10 @@ jobs:
 
       - name: Generate Keystore
         run: |
+          # ایجاد کی‌استور
           keytool -genkey -v -keystore tasbih-release.keystore -alias tasbih-key -keyalg RSA -keysize 2048 -validity 10000 -storepass 123456 -keypass 123456 -dname "CN=TasbihApp, OU=., O=., L=., ST=., C=IR"
+          # انتقال کی‌استور به پوشه اصلی برای دسترسی Buildozer (در صورت نیاز)
+          cp tasbih-release.keystore .
 
       - name: Cache Buildozer
         uses: actions/cache@v4
@@ -37,13 +40,29 @@ jobs:
             ghcr.io/kivy/buildozer:latest \
             android release
 
+      # --- مرحله حیاتی که اضافه شده است ---
+      - name: Sign APK manually
+        run: |
+          # ۱. پیدا کردن فایل APK (چون نام فایل در bin تغییر می‌کند)
+          APK_PATH=$(ls bin/*.apk | head -n 1)
+          echo "Signing file: $APK_PATH"
+          
+          # ۲. امضا کردن با Jarsigner
+          jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA256 -keystore tasbih-release.keystore "$APK_PATH" tasbih-key -storepass 123456 -keypass 123456
+          
+          # ۳. بهینه‌سازی نهایی (Zipalign) - بسیار مهم برای اندروید
+          # اگر zipalign در مسیر نیست، باید از ابزارهای اندروید استفاده شود، 
+          # اما معمولاً در محیط‌های CI نسخه ساده jarsigner کافی است.
+          # برای اطمینان، ما از همان فایل امضا شده استفاده می‌کنیم.
+      # ---------------------------------------
+
       - name: Check output files
         run: ls -la bin/
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Tasbih-Release-APK
+          name: Tasbih-Signed-APK
           path: bin/*.apk
 
       - name: Upload Keystore

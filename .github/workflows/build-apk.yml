@@ -15,6 +15,10 @@ jobs:
           java-version: "17"
           distribution: "temurin"
 
+      - name: Generate Keystore
+        run: |
+          keytool -genkey -v -keystore tasbih-release.keystore -alias tasbih-key -keyalg RSA -keysize 2048 -validity 10000 -storepass 123456 -keypass 123456 -dname "CN=TasbihApp, OU=., O=., L=., ST=., C=IR"
+
       - name: Cache Buildozer
         uses: actions/cache@v4
         with:
@@ -25,17 +29,17 @@ jobs:
           restore-keys: |
             buildozer-
 
-      - name: Generate Keystore
-        run: |
-          keytool -genkey -v -keystore tasbih-release.keystore -alias tasbih-key -keyalg RSA -keysize 2048 -validity 10000 -storepass 123456 -keypass 123456 -dname "CN=TasbihApp, OU=., O=., L=., ST=., C=IR"
-
-      - name: Build Signed APK with Buildozer
+      - name: Build APK with Buildozer
         run: |
           docker run --rm \
             -v "$(pwd):/home/user/hostcwd" \
             -v "$HOME/.buildozer:/home/user/.buildozer" \
             ghcr.io/kivy/buildozer:latest \
-            android release
+            android debug
+
+      - name: Sign APK
+        run: |
+          jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 -keystore tasbih-release.keystore -storepass 123456 bin/*.apk tasbih-key
 
       - name: Upload Signed APK
         uses: actions/upload-artifact@v4

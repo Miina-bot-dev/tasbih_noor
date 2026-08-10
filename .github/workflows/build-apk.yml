@@ -1,16 +1,19 @@
-name: Build APK
+name: Build Signed APK
 
 on:
-  push:
-    branches: [main, master]
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: "17"
+          distribution: "temurin"
 
       - name: Cache Buildozer
         uses: actions/cache@v4
@@ -22,16 +25,26 @@ jobs:
           restore-keys: |
             buildozer-
 
-      - name: Build APK with Buildozer
+      - name: Generate Keystore
+        run: |
+          keytool -genkey -v -keystore tasbih-release.keystore -alias tasbih-key -keyalg RSA -keysize 2048 -validity 10000 -storepass 123456 -keypass 123456 -dname "CN=TasbihApp, OU=., O=., L=., ST=., C=IR"
+
+      - name: Build Signed APK with Buildozer
         run: |
           docker run --rm \
             -v "$(pwd):/home/user/hostcwd" \
             -v "$HOME/.buildozer:/home/user/.buildozer" \
             ghcr.io/kivy/buildozer:latest \
-            android debug
+            android release
 
-      - name: Upload APK
+      - name: Upload Signed APK
         uses: actions/upload-artifact@v4
         with:
-          name: tasbih-noor-apk
-          path: bin/*.apk
+          name: Tasbih-Signed-APK
+          path: bin/*-release-signed.apk
+
+      - name: Upload Keystore
+        uses: actions/upload-artifact@v4
+        with:
+          name: Keystore-Backup
+          path: tasbih-release.keystore

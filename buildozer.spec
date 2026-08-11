@@ -13,6 +13,11 @@ android.minapi = 21
 android.accept_sdk_license = True
 android.archs = arm64-v8a
 icon.filename = %(source.dir)s/icon.png
+android.sign = True
+android.keystore = tasbih-release.keystore
+android.keystore_alias = tasbih-key
+android.keystore_keypass = 123456
+android.keystore_storepass = 123456
 
 [buildozer]
 log_level = 1

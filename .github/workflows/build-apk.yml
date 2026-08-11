@@ -15,6 +15,9 @@ jobs:
           java-version: "17"
           distribution: "temurin"
 
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
       - name: Generate Keystore
         run: |
           keytool -genkey -v -keystore tasbih-release.keystore -alias tasbih-key -keyalg RSA -keysize 2048 -validity 10000 -storepass 123456 -keypass 123456 -dname "CN=TasbihApp, OU=., O=., L=., ST=., C=IR"
@@ -37,24 +40,18 @@ jobs:
             ghcr.io/kivy/buildozer:latest \
             android debug
 
-      - name: Prepare Signing Key
-        run: |
-          echo "SIGNING_KEY=$(base64 -w 0 tasbih-release.keystore)" >> $GITHUB_ENV
-
       - name: Sign APK
-        uses: r0adkll/sign-android-release@v1
-        with:
-          releaseDirectory: bin
-          signingKeyBase64: ${{ env.SIGNING_KEY }}
-          alias: tasbih-key
-          keyStorePassword: 123456
-          keyPassword: 123456
+        run: |
+          ls -la bin/
+          zipalign -p 4 bin/*.apk bin/aligned.apk
+          apksigner sign --ks tasbih-release.keystore --ks-pass pass:123456 --key-pass pass:123456 bin/aligned.apk
+          mv bin/aligned.apk bin/tasbih-signed.apk
 
       - name: Upload Signed APK
         uses: actions/upload-artifact@v4
         with:
           name: Tasbih-Signed-APK
-          path: bin/*-signed.apk
+          path: bin/tasbih-signed.apk
 
       - name: Upload Keystore
         uses: actions/upload-artifact@v4

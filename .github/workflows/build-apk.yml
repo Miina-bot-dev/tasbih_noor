@@ -17,10 +17,7 @@ jobs:
 
       - name: Generate Keystore
         run: |
-          # ایجاد کی‌استور
           keytool -genkey -v -keystore tasbih-release.keystore -alias tasbih-key -keyalg RSA -keysize 2048 -validity 10000 -storepass 123456 -keypass 123456 -dname "CN=TasbihApp, OU=., O=., L=., ST=., C=IR"
-          # انتقال کی‌استور به پوشه اصلی برای دسترسی Buildozer (در صورت نیاز)
-          cp tasbih-release.keystore .
 
       - name: Cache Buildozer
         uses: actions/cache@v4
@@ -32,38 +29,34 @@ jobs:
           restore-keys: |
             buildozer-
 
-      - name: Build Release APK with Buildozer
+      - name: Build Debug APK
         run: |
           docker run --rm \
             -v "$(pwd):/home/user/hostcwd" \
             -v "$HOME/.buildozer:/home/user/.buildozer" \
             ghcr.io/kivy/buildozer:latest \
-            android release
+            android debug
 
-      # --- مرحله حیاتی که اضافه شده است ---
-      - name: Sign APK manually
+      - name: Sign APK with apksigner (v2)
         run: |
-          # ۱. پیدا کردن فایل APK (چون نام فایل در bin تغییر می‌کند)
-          APK_PATH=$(ls bin/*.apk | head -n 1)
-          echo "Signing file: $APK_PATH"
-          
-          # ۲. امضا کردن با Jarsigner
-          jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA256 -keystore tasbih-release.keystore "$APK_PATH" tasbih-key -storepass 123456 -keypass 123456
-          
-          # ۳. بهینه‌سازی نهایی (Zipalign) - بسیار مهم برای اندروید
-          # اگر zipalign در مسیر نیست، باید از ابزارهای اندروید استفاده شود، 
-          # اما معمولاً در محیط‌های CI نسخه ساده jarsigner کافی است.
-          # برای اطمینان، ما از همان فایل امضا شده استفاده می‌کنیم.
-      # ---------------------------------------
+          docker run --rm \
+            -v "$(pwd):/home/user/hostcwd" \
+            -v "$HOME/.buildozer:/home/user/.buildozer" \
+            ghcr.io/kivy/buildozer:latest \
+            bash -c "
+              APK=\$(ls /home/user/hostcwd/bin/*.apk | head -1)
+              ZIPALIGN=\$(find /home/user/.buildozer -name zipalign -type f | head -1)
+              APKSIGNER=\$(find /home/user/.buildozer -name apksigner -type f | head -1)
+              \$ZIPALIGN -p 4 \$APK /home/user/hostcwd/bin/aligned.apk
+              \$APKSIGNER sign --ks /home/user/hostcwd/tasbih-release.keystore --ks-pass pass:123456 --key-pass pass:123456 --out /home/user/hostcwd/bin/tasbih-signed.apk /home/user/hostcwd/bin/aligned.apk
+              rm /home/user/hostcwd/bin/aligned.apk
+            "
 
-      - name: Check output files
-        run: ls -la bin/
-
-      - name: Upload APK
+      - name: Upload Signed APK
         uses: actions/upload-artifact@v4
         with:
           name: Tasbih-Signed-APK
-          path: bin/*.apk
+          path: bin/tasbih-signed.apk
 
       - name: Upload Keystore
         uses: actions/upload-artifact@v4

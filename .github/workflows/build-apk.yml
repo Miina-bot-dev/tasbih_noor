@@ -9,6 +9,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: "17"
+          distribution: "temurin"
+
       - name: Generate Keystore
         run: |
           keytool -genkey -v -keystore tasbih-release.keystore -alias tasbih-key -keyalg RSA -keysize 2048 -validity 10000 -storepass 123456 -keypass 123456 -dname "CN=TasbihApp, OU=., O=., L=., ST=., C=IR"
@@ -23,22 +29,36 @@ jobs:
           restore-keys: |
             buildozer-
 
-      - name: Build Release APK
+      - name: Build Debug APK
         run: |
           docker run --rm \
             -v "$(pwd):/home/user/hostcwd" \
             -v "$HOME/.buildozer:/home/user/.buildozer" \
             ghcr.io/kivy/buildozer:latest \
-            android release
+            android debug
 
-      - name: Check output
-        run: ls -la bin/
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
 
-      - name: Upload APK
+      - name: Install Build Tools
+        run: sdkmanager "build-tools;33.0.0"
+
+      - name: Sign APK
+        run: |
+          ls -la bin/
+          ZIPALIGN=$(find $ANDROID_SDK_ROOT -name zipalign -type f | head -1)
+          APKSIGNER=$(find $ANDROID_SDK_ROOT -name apksigner -type f | head -1)
+          echo "Found: $ZIPALIGN"
+          echo "Found: $APKSIGNER"
+          $ZIPALIGN -p 4 bin/*.apk aligned.apk
+          $APKSIGNER sign --ks tasbih-release.keystore --ks-pass pass:123456 --key-pass pass:123456 --out tasbih-signed.apk aligned.apk
+          ls -la tasbih-signed.apk
+
+      - name: Upload Signed APK
         uses: actions/upload-artifact@v4
         with:
-          name: Tasbih-Release-APK
-          path: bin/*.apk
+          name: Tasbih-Signed-APK
+          path: tasbih-signed.apk
 
       - name: Upload Keystore
         uses: actions/upload-artifact@v4

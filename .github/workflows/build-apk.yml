@@ -15,9 +15,41 @@ jobs:
           java-version: "17"
           distribution: "temurin"
 
+      # ⚠️⚠️⚠️ مهم: برای آپدیت برنامه روی بازار/مایکت، باید از keystore قبلی استفاده کنی
+      # اگه keystore قبلی رو داری، باید به عنوان GitHub Secret ذخیره کنی
+      # فعلاً اینجا یه keystore جدید می‌سازه برای تست
       - name: Generate Keystore
         run: |
           keytool -genkey -v -keystore tasbih-release.keystore -alias tasbih-key -keyalg RSA -keysize 2048 -validity 10000 -storepass 123456 -keypass 123456 -dname "CN=TasbihApp, OU=., O=., L=., ST=., C=IR"
+
+      - name: Update buildozer.spec for API 33
+        run: |
+          # تابع کمکی برای تنظیم یا اضافه کردن هر مقدار
+          set_spec() {
+            key=$1
+            value=$2
+            if grep -q "^$key = " buildozer.spec; then
+              sed -i "s|^$key = .*|$key = $value|" buildozer.spec
+            else
+              echo "$key = $value" >> buildozer.spec
+            fi
+          }
+
+          # تنظیم API برای سازگاری با اندروید ۱۱+
+          set_spec "android.api" "33"
+          set_spec "android.minapi" "21"
+          set_spec "android.sdk" "33"
+          set_spec "android.ndk" "25b"
+          set_spec "android.archs" "armeabi-v7a, arm64-v8a"
+
+          # تنظیم امضای Release
+          set_spec "android.signing.keystore" "tasbih-release.keystore"
+          set_spec "android.signing.alias" "tasbih-key"
+          set_spec "android.signing.storepass" "123456"
+          set_spec "android.signing.keypass" "123456"
+
+          echo "=== تنظیمات buildozer.spec ==="
+          grep -E "^android\.(api|minapi|sdk|ndk|archs|signing)" buildozer.spec || true
 
       - name: Cache Buildozer
         uses: actions/cache@v4
@@ -29,36 +61,16 @@ jobs:
           restore-keys: |
             buildozer-
 
-      - name: Build Debug APK
+      # ✅ تغییر اصلی: debug → release
+      - name: Build Release APK
         run: |
-          docker run --rm \
-            -v "$(pwd):/home/user/hostcwd" \
-            -v "$HOME/.buildozer:/home/user/.buildozer" \
-            ghcr.io/kivy/buildozer:latest \
-            android debug
-
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Install Build Tools
-        run: sdkmanager "build-tools;33.0.0"
-
-      - name: Sign APK
-        run: |
-          ls -la bin/
-          ZIPALIGN=$(find $ANDROID_SDK_ROOT -name zipalign -type f | head -1)
-          APKSIGNER=$(find $ANDROID_SDK_ROOT -name apksigner -type f | head -1)
-          echo "Found: $ZIPALIGN"
-          echo "Found: $APKSIGNER"
-          $ZIPALIGN -p 4 bin/*.apk aligned.apk
-          $APKSIGNER sign --ks tasbih-release.keystore --ks-pass pass:123456 --key-pass pass:123456 --out tasbih-signed.apk aligned.apk
-          ls -la tasbih-signed.apk
+          docker run --rm             -v "$(pwd):/home/user/hostcwd"             -v "$HOME/.buildozer:/home/user/.buildozer"             ghcr.io/kivy/buildozer:latest             android release
 
       - name: Upload Signed APK
         uses: actions/upload-artifact@v4
         with:
           name: Tasbih-Signed-APK
-          path: tasbih-signed.apk
+          path: bin/*-release*.apk
 
       - name: Upload Keystore
         uses: actions/upload-artifact@v4

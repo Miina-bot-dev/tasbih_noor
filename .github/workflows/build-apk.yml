@@ -5,7 +5,8 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@v4
 
@@ -15,28 +16,49 @@ jobs:
           java-version: "17"
           distribution: "temurin"
 
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y             git zip unzip openjdk-17-jdk autoconf libtool pkg-config             zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo5             cmake libffi-dev libssl-dev automake
+
+      - name: Install Python dependencies
+        run: |
+          pip install --upgrade pip
+          pip install buildozer cython
+
       - name: Generate Keystore
         run: |
-          keytool -genkey -v -keystore tasbih-release.keystore -alias tasbih-key -keyalg RSA -keysize 2048 -validity 10000 -storepass 123456 -keypass 123456 -dname "CN=TasbihApp, OU=., O=., L=., ST=., C=IR"
+          keytool -genkey -v             -keystore tasbih-release.keystore             -alias tasbih-key             -keyalg RSA -keysize 2048 -validity 10000             -storepass 123456 -keypass 123456             -dname "CN=TasbihApp, OU=., O=., L=., ST=., C=IR"
 
-      - name: Update buildozer.spec for API 31
+      - name: Clean and update buildozer.spec
         run: |
+          # پاک کردن کش قبلی
+          rm -rf .buildozer bin/
+
+          # تابع کمکی
           set_spec() {
-            key=$1
-            value=$2
-            if grep -q "^$key = " buildozer.spec; then
+            key="$1"
+            value="$2"
+            if grep -q "^$key = " buildozer.spec 2>/dev/null; then
               sed -i "s|^$key = .*|$key = $value|" buildozer.spec
             else
               echo "$key = $value" >> buildozer.spec
             fi
           }
 
-          # API 31 با NDK r28c سازگاره (API 33 نیست)
-          set_spec "android.api" "31"
+          # تنظیمات API (مطابق با NDK 25b)
+          set_spec "android.api" "33"
           set_spec "android.minapi" "21"
-          set_spec "android.sdk" "31"
+          set_spec "android.sdk" "33"
           set_spec "android.ndk" "25b"
-          set_spec "android.archs" "armeabi-v7a, arm64-v8a"
+          set_spec "android.archs" "armeabi-v7a arm64-v8a"
+          set_spec "android.accept_sdk_license" "True"
+          set_spec "log_level" "2"
 
           # امضای Release
           set_spec "android.signing.keystore" "tasbih-release.keystore"
@@ -44,8 +66,8 @@ jobs:
           set_spec "android.signing.storepass" "123456"
           set_spec "android.signing.keypass" "123456"
 
-          echo "=== buildozer.spec settings ==="
-          grep -E "^android\.(api|minapi|sdk|ndk|archs|signing)" buildozer.spec || true
+          echo "=== buildozer.spec (تنظیمات نهایی) ==="
+          grep -E "^(android\.|log_level)" buildozer.spec | head -20
 
       - name: Cache Buildozer
         uses: actions/cache@v4
@@ -53,13 +75,18 @@ jobs:
           path: |
             ~/.buildozer
             .buildozer
-          key: buildozer-${{ hashFiles('buildozer.spec') }}
+          key: buildozer-v2-${{ hashFiles('buildozer.spec') }}
           restore-keys: |
-            buildozer-
+            buildozer-v2-
 
       - name: Build Release APK
         run: |
-          docker run --rm             -v "$(pwd):/home/user/hostcwd"             -v "$HOME/.buildozer:/home/user/.buildozer"             ghcr.io/kivy/buildozer:latest             android release
+          export JAVA_HOME=$JAVA_HOME_17_X64
+          export PATH=$JAVA_HOME_17_X64/bin:$PATH
+          buildozer android clean
+          buildozer android release
+        env:
+          JAVA_HOME: ${{ env.JAVA_HOME_17_X64 }}
 
       - name: Upload Signed APK
         uses: actions/upload-artifact@v4

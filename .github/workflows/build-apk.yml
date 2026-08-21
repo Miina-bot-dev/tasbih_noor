@@ -1,66 +1,69 @@
-name: Build Release APK
+name: Build Signed APK
 
 on:
-  push:
-    branches: [main, master]
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
+    timeout-minutes: 120
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.10'
-
-      - name: Install system dependencies
+      - name: Generate Keystore
         run: |
-          sudo apt-get update
-          sudo apt-get install -y git zip unzip openjdk-17-jdk autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo5 cmake libffi-dev libssl-dev automake
-          pip install --upgrade pip
-          pip install --upgrade Cython==0.29.36 virtualenv buildozer
+          keytool -genkey -v             -keystore tasbih-release.keystore             -alias tasbih-key             -keyalg RSA -keysize 2048 -validity 10000             -storepass 123456 -keypass 123456             -dname "CN=TasbihApp, OU=., O=., L=., ST=., C=IR"
 
-      - name: Setup swap (prevent OOM)
+      - name: Pre-download NDK 25b (CRITICAL FIX)
         run: |
-          sudo fallocate -l 8G /swapfile
-          sudo chmod 600 /swapfile
-          sudo mkswap /swapfile
-          sudo swapon /swapfile
-          free -h
+          mkdir -p $HOME/.buildozer/android/platform
+          cd $HOME/.buildozer/android/platform
+          if [ ! -d "android-ndk-r25b" ]; then
+            echo "Downloading NDK 25b..."
+            wget -q --show-progress https://dl.google.com/android/repository/android-ndk-r25b-linux.zip
+            echo "Extracting NDK 25b..."
+            unzip -q android-ndk-r25b-linux.zip
+            rm android-ndk-r25b-linux.zip
+          fi
+          echo "NDK contents:"
+          ls -la $HOME/.buildozer/android/platform/
 
-      - name: Cache Buildozer & Gradle
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.buildozer
-            ~/.gradle
-          key: ${{ runner.os }}-buildozer-${{ hashFiles('buildozer.spec') }}
-          restore-keys: |
-            ${{ runner.os }}-buildozer-
-
-      - name: Decode Keystore
+      - name: Update buildozer.spec
         run: |
-          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > tasbihnoor.keystore
-
-      - name: Inject signing passwords into buildozer.spec
-        run: |
-          echo "android.signing.storepass = ${{ secrets.STORE_PASSWORD }}" >> buildozer.spec
-          echo "android.signing.keypass = ${{ secrets.KEY_PASSWORD }}" >> buildozer.spec
+          touch buildozer.spec
+          safe_set() {
+            key="$1"
+            val="$2"
+            if grep -q "^${key} =" buildozer.spec 2>/dev/null; then
+              sed -i "s|^${key} =.*|${key} = ${val}|" buildozer.spec
+            else
+              echo "${key} = ${val}" >> buildozer.spec
+            fi
+          }
+          safe_set "android.api" "33"
+          safe_set "android.minapi" "21"
+          safe_set "android.ndk" "25b"
+          safe_set "android.archs" "armeabi-v7a arm64-v8a"
+          safe_set "android.accept_sdk_license" "True"
+          safe_set "android.signing.keystore" "tasbih-release.keystore"
+          safe_set "android.signing.alias" "tasbih-key"
+          safe_set "android.signing.storepass" "123456"
+          safe_set "android.signing.keypass" "123456"
+          echo "=== buildozer.spec ==="
+          grep -E "^(android\.|log_level)" buildozer.spec || true
 
       - name: Build Release APK
         run: |
-          export PATH=$PATH:$HOME/.local/bin
-          buildozer android release
-        env:
-          BUILDOZER_WARN_ON_ROOT: 0
+          docker run --rm             -v "$(pwd):/home/user/hostcwd"             -v "$HOME/.buildozer:/home/user/.buildozer"             ghcr.io/kivy/buildozer:latest             android release
 
       - name: Upload Signed APK
         uses: actions/upload-artifact@v4
         with:
-          name: release-apk
-          path: bin/*.apk
+          name: Tasbih-Signed-APK
+          path: bin/*-release*.apk
+
+      - name: Upload Keystore
+        uses: actions/upload-artifact@v4
+        with:
+          name: Keystore-Backup
+          path: tasbih-release.keystore

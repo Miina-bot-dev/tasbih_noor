@@ -1,105 +1,49 @@
-name: Build Signed APK
+name: Build Release APK
 
 on:
+  push:
+    branches: [main, master]
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Generate Keystore (matching buildozer.spec)
-        run: |
-          keytool -genkey -v \
-            -keystore tasbihnoor.keystore \
-            -alias tasbihnoor \
-            -keyalg RSA -keysize 2048 -validity 10000 \
-            -storepass "123456" \
-            -keypass "123456" \
-            -dname "CN=TasbihApp, OU=., O=., L=., ST=., C=IR"
+      # ─── کش .buildozer_global (SDK, NDK, ANT, platform-tools) ───
+      - name: Cache Buildozer Global
+        uses: actions/cache@v4
+        with:
+          path: .buildozer_global
+          key: buildozer-global-${{ hashFiles('buildozer.spec') }}
+          restore-keys: |
+            buildozer-global-
 
-      - name: Fix buildozer.spec completely
-        run: |
-          sed -i '/^android\.api =/d' buildozer.spec
-          sed -i '/^android\.sdk =/d' buildozer.spec
-          sed -i '/^android\.ndk =/d' buildozer.spec
-          sed -i '/^android\.ndk_api =/d' buildozer.spec
-          sed -i '/^android\.signing\./d' buildozer.spec
-          sed -i '/^android\.gradle_dependencies =/d' buildozer.spec
-          sed -i '/^p4a\.branch =/d' buildozer.spec
+      # ─── کش .buildozer (recipeها، کمپایل‌ها، دانلودها) ───
+      - name: Cache Buildozer Local
+        uses: actions/cache@v4
+        with:
+          path: .buildozer
+          key: buildozer-local-${{ hashFiles('buildozer.spec') }}
+          restore-keys: |
+            buildozer-local-
 
-          {
-            echo ""
-            echo "# === Auto-fixed by CI ==="
-            echo "android.api = 34"
-            echo "android.minapi = 21"
-            echo "android.ndk = 25b"
-            echo "android.ndk_api = 21"
-            echo "android.archs = arm64-v8a, armeabi-v7a"
-            echo "android.accept_sdk_license = True"
-            echo "android.signing.keystore = tasbihnoor.keystore"
-            echo "android.signing.alias = tasbihnoor"
-            echo "android.signing.storepass = 123456"
-            echo "android.signing.keypass = 123456"
-          } >> buildozer.spec
+      # ─── Build با Buildozer Action ───
+      - name: Build APK
+        uses: ArtemSBulgakov/buildozer-action@v1
+        with:
+          command: buildozer android release
+          buildozer_version: stable
+        env:
+          APP_ANDROID_ACCEPT_SDK_LICENSE: 1
+          BUILDOZER_WARN_ON_ROOT: 0
 
-          echo "=== Final buildozer.spec ==="
-          cat buildozer.spec
-
-      - name: Clean build cache (avoid stale/mismatched NDK)
-        run: |
-          rm -rf .buildozer bin/ "$HOME/.buildozer"
-
-      - name: Build Release APK
-        run: |
-          docker run --rm \
-            -v "$(pwd):/home/user/hostcwd" \
-            -v "$HOME/.buildozer:/home/user/.buildozer" \
-            ghcr.io/kivy/buildozer:latest \
-            android release
-
-      - name: List build output (debug)
-        run: |
-          find bin -type f -name "*.apk" -exec ls -lh {} \;
-
-      - name: Re-sign APK with apksigner (v1 + v2 + v3 scheme)
-        run: |
-          set -e
-          APK=$(find bin -name "*-release-unsigned.apk" | head -n 1)
-          if [ -z "$APK" ]; then
-            APK=$(find bin -name "*-release*.apk" | head -n 1)
-          fi
-          echo "Source APK: $APK"
-
-          BUILD_TOOLS=$(find "$HOME/.buildozer" -type d -path "*build-tools*" | sort -V | tail -n 1)
-          echo "Using build-tools: $BUILD_TOOLS"
-          ZIPALIGN="$BUILD_TOOLS/zipalign"
-          APKSIGNER="$BUILD_TOOLS/apksigner"
-
-          mkdir -p bin/final
-          "$ZIPALIGN" -v -p 4 "$APK" bin/final/aligned.apk
-
-          "$APKSIGNER" sign \
-            --ks tasbihnoor.keystore \
-            --ks-pass "pass:123456" \
-            --key-pass "pass:123456" \
-            --ks-key-alias tasbihnoor \
-            --out bin/final/tasbihnoor-signed.apk \
-            bin/final/aligned.apk
-
-          echo "=== Verifying signature (must show v1/v2/v3 = true) ==="
-          "$APKSIGNER" verify -v --print-certs bin/final/tasbihnoor-signed.apk
-
-      - name: Upload Signed APK
+      # ─── آپلود خروجی ───
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Tasbih-Signed-APK
-          path: bin/final/tasbihnoor-signed.apk
-
-      - name: Upload Keystore
-        uses: actions/upload-artifact@v4
-        with:
-          name: Keystore-Backup
-          path: tasbihnoor.keystore
+          name: release-apk
+          path: bin/*.apk

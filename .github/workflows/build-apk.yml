@@ -33,15 +33,68 @@ jobs:
           pip install --upgrade pip
           pip install buildozer cython
 
-      - name: Cache Buildozer downloads
+      - name: Cache Buildozer
         uses: actions/cache@v4
         with:
           path: |
             ~/.buildozer
             .buildozer
-          key: buildozer-${{ hashFiles('buildozer.spec') }}
-          restore-keys: |
-            buildozer-
+          key: buildozer-v2-${{ hashFiles('buildozer.spec') }}
+          restore-keys: buildozer-v2-
+
+      - name: Clean broken SDK if needed
+        run: |
+          if [ -d "$HOME/.buildozer/android/platform/android-sdk" ] && [ ! -d "$HOME/.buildozer/android/platform/android-sdk/build-tools" ]; then
+            echo "Broken SDK cache detected, removing..."
+            rm -rf "$HOME/.buildozer/android/platform/android-sdk"
+            rm -rf "$HOME/.buildozer/android/platform/android-ndk-r25b"
+            rm -rf "$HOME/.buildozer/android/platform/apache-ant-1.9.4"
+          fi
+
+      - name: Setup Android SDK
+        run: |
+          SDK_DIR="$HOME/.buildozer/android/platform/android-sdk"
+          if [ ! -d "$SDK_DIR/build-tools" ]; then
+            echo "Installing Android SDK..."
+            rm -rf "$SDK_DIR"
+            mkdir -p "$SDK_DIR/cmdline-tools"
+            cd "$SDK_DIR/cmdline-tools"
+            wget -q --tries=5 --timeout=60 https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip
+            unzip -q commandlinetools-linux-9477386_latest.zip
+            mv cmdline-tools latest
+            export PATH="$PATH:$SDK_DIR/cmdline-tools/latest/bin"
+            yes | sdkmanager --licenses || true
+            sdkmanager "build-tools;33.0.0" "platforms;android-33" "platform-tools"
+            echo "Android SDK installed successfully"
+          else
+            echo "Android SDK already exists, skipping..."
+          fi
+
+      - name: Setup Android NDK
+        run: |
+          NDK_DIR="$HOME/.buildozer/android/platform/android-ndk-r25b"
+          if [ ! -d "$NDK_DIR" ]; then
+            echo "Installing Android NDK..."
+            cd "$HOME/.buildozer/android/platform"
+            wget -q --tries=5 --timeout=60 https://dl.google.com/android/repository/android-ndk-r25b-linux.zip
+            unzip -q android-ndk-r25b-linux.zip
+            echo "Android NDK installed successfully"
+          else
+            echo "Android NDK already exists, skipping..."
+          fi
+
+      - name: Setup Apache Ant
+        run: |
+          ANT_DIR="$HOME/.buildozer/android/platform/apache-ant-1.9.4"
+          if [ ! -d "$ANT_DIR" ]; then
+            echo "Installing Apache Ant..."
+            cd "$HOME/.buildozer/android/platform"
+            wget -q --tries=5 --timeout=60 https://archive.apache.org/dist/ant/binaries/apache-ant-1.9.4-bin.zip
+            unzip -q apache-ant-1.9.4-bin.zip
+            echo "Apache Ant installed successfully"
+          else
+            echo "Apache Ant already exists, skipping..."
+          fi
 
       - name: Build APK
         run: |

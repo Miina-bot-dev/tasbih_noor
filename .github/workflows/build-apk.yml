@@ -7,41 +7,49 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # ─── کش .buildozer_global (SDK, NDK, ANT, platform-tools) ───
-      - name: Cache Buildozer Global
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            git zip unzip openjdk-17-jdk \
+            python3-pip autoconf libtool pkg-config \
+            zlib1g-dev libncurses5-dev libncursesw5-dev \
+            liblzma-dev libffi-dev libssl-dev \
+            automake cmake libpq-dev
+
+      - name: Install Buildozer & Cython
+        run: |
+          pip install --upgrade pip
+          pip install buildozer cython
+
+      - name: Cache Buildozer downloads
         uses: actions/cache@v4
         with:
-          path: .buildozer_global
-          key: buildozer-global-${{ hashFiles('buildozer.spec') }}
+          path: |
+            ~/.buildozer
+            .buildozer
+          key: buildozer-${{ hashFiles('buildozer.spec') }}
           restore-keys: |
-            buildozer-global-
+            buildozer-
 
-      # ─── کش .buildozer (recipeها، کمپایل‌ها، دانلودها) ───
-      - name: Cache Buildozer Local
-        uses: actions/cache@v4
-        with:
-          path: .buildozer
-          key: buildozer-local-${{ hashFiles('buildozer.spec') }}
-          restore-keys: |
-            buildozer-local-
-
-      # ─── Build با Buildozer Action ───
       - name: Build APK
-        uses: ArtemSBulgakov/buildozer-action@v1
-        with:
-          command: buildozer android release
-          buildozer_version: stable
+        run: |
+          buildozer android release
         env:
           APP_ANDROID_ACCEPT_SDK_LICENSE: 1
           BUILDOZER_WARN_ON_ROOT: 0
 
-      # ─── آپلود خروجی ───
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:

@@ -1,5 +1,4 @@
 [app]
-
 title = Tasbih Noor
 package.name = tasbihnoor
 package.domain = org.mina
@@ -18,8 +17,11 @@ android.minapi = 21
 android.ndk = 25b
 android.ndk_api = 21
 
-# ⬇️⬇️⬇️ این خط False شد ⬇️⬇️⬇️
-android.skip_update = False
+# ⬇️⬇️⬇️ اینا مهم هستن ⬇️⬇️⬇️
+android.skip_update = True
+android.sdk_path = ~/.buildozer/android/platform/android-sdk
+android.ndk_path = ~/.buildozer/android/platform/android-ndk-r25b
+android.ant_path = ~/.buildozer/android/platform/apache-ant-1.9.4
 
 android.archs = arm64-v8a, armeabi-v7a
 p4a.branch = develop

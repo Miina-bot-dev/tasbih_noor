@@ -1,26 +1,49 @@
-[app]
+name: Build Release APK
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
 
-title = Tasbih Noor
-package.name = tasbihnoor
-package.domain = org.mina
-source.dir = .
-source.include_exts = py,png,jpg,kv,atlas,ttf,json,txt
-version = 1.0.0
-requirements = python3,kivy==2.2.1,arabic-reshaper,python-bidi,setuptools,wheel,six,pillow
-orientation = portrait
-fullscreen = 0
-
-# ⬇️ API 34 = Android 14 (استاندارد بازار/مایکت 2026)
-android.api = 34
-android.minapi = 21
-android.archs = arm64-v8a, armeabi-v7a
-
-# ⬇️ تنظیمات امضای رسمی (Release)
-android.release_artifact = apk
-android.sign = True
-android.keystore = release.keystore
-android.keyalias = tasbihnoor
-
-[buildozer]
-log_level = 2
-warn_on_root = 0
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      - run: |
+          sudo apt-get update
+          sudo apt-get install -y git zip unzip openjdk-17-jdk python3-pip autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev liblzma-dev libffi-dev libssl-dev automake cmake
+          pip install --upgrade pip
+          pip install buildozer cython
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.buildozer
+            .buildozer
+          key: buildozer-release-${{ hashFiles('buildozer.spec') }}
+          restore-keys: buildozer-release-
+      - run: |
+          if [ ! -f release.keystore ]; then
+            keytool -genkey -v \
+              -keystore release.keystore \
+              -alias tasbihnoor \
+              -keyalg RSA \
+              -keysize 2048 \
+              -validity 10000 \
+              -dname "CN=Tasbih Noor, OU=App, O=Mina, L=Tehran, ST=Tehran, C=IR" \
+              -storepass tasbihnoor123 \
+              -keypass tasbihnoor123
+          fi
+      - run: buildozer android release
+        env:
+          APP_ANDROID_ACCEPT_SDK_LICENSE: 1
+          BUILDOZER_WARN_ON_ROOT: 0
+          BUILDOZER_ANDROID_KEYSTORE_PASS: tasbihnoor123
+          BUILDOZER_ANDROID_KEYALIAS_PASS: tasbihnoor123
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-apk
+          path: bin/*.apk

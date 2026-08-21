@@ -1,5 +1,4 @@
 [app]
-
 title = Tasbih Noor
 package.name = tasbihnoor
 package.domain = org.mina
@@ -9,16 +8,12 @@ version = 1.0.0
 requirements = python3,kivy==2.2.1,arabic-reshaper,python-bidi,setuptools,wheel,six,pillow
 orientation = portrait
 fullscreen = 0
-
-# ⬇️ API 34 = Android 14 (استاندارد بازار/مایکت 2026)
-android.api = 34
+android.api = 33
 android.minapi = 21
 android.archs = arm64-v8a, armeabi-v7a
 
-# ⬇️ تنظیمات امضای رسمی (Release)
-android.release_artifact = apk
-android.sign = True
-android.keystore = release.keystore
+# Keystore path (relative to project root)
+android.keystore = ./release.keystore
 android.keyalias = tasbihnoor
 
 [buildozer]

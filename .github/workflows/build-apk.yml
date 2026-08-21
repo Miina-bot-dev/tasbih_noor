@@ -5,88 +5,54 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     timeout-minutes: 120
     steps:
       - uses: actions/checkout@v4
-
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          java-version: "17"
-          distribution: "temurin"
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.10'
-
-      - name: Install system dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y             git zip unzip openjdk-17-jdk autoconf libtool pkg-config             zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo5             cmake libffi-dev libssl-dev automake
-
-      - name: Install Python dependencies
-        run: |
-          pip install --upgrade pip
-          pip install buildozer cython
 
       - name: Generate Keystore
         run: |
           keytool -genkey -v             -keystore tasbih-release.keystore             -alias tasbih-key             -keyalg RSA -keysize 2048 -validity 10000             -storepass 123456 -keypass 123456             -dname "CN=TasbihApp, OU=., O=., L=., ST=., C=IR"
 
-      - name: Clean and update buildozer.spec
+      - name: Update buildozer.spec (SAFE)
         run: |
-          # پاک کردن کش قبلی
-          rm -rf .buildozer bin/
+          # فقط اگه فایل exist نداره بساز
+          touch buildozer.spec
 
-          # تابع کمکی
-          set_spec() {
+          # تابع کمکی: اگه وجود داشت عوضش کن، نه اضافه کن
+          safe_set() {
             key="$1"
-            value="$2"
-            if grep -q "^$key = " buildozer.spec 2>/dev/null; then
-              sed -i "s|^$key = .*|$key = $value|" buildozer.spec
+            val="$2"
+            if grep -q "^${key} =" buildozer.spec 2>/dev/null; then
+              sed -i "s|^${key} =.*|${key} = ${val}|" buildozer.spec
             else
-              echo "$key = $value" >> buildozer.spec
+              echo "${key} = ${val}" >> buildozer.spec
             fi
           }
 
-          # تنظیمات API (مطابق با NDK 25b)
-          set_spec "android.api" "33"
-          set_spec "android.minapi" "21"
-          set_spec "android.sdk" "33"
-          set_spec "android.ndk" "25b"
-          set_spec "android.archs" "armeabi-v7a arm64-v8a"
-          set_spec "android.accept_sdk_license" "True"
-          set_spec "log_level" "2"
+          # فقط API و signing — NDK رو force نمی‌کنیم
+          safe_set "android.api" "31"
+          safe_set "android.minapi" "21"
+          safe_set "android.archs" "armeabi-v7a arm64-v8a"
+          safe_set "android.accept_sdk_license" "True"
 
-          # امضای Release
-          set_spec "android.signing.keystore" "tasbih-release.keystore"
-          set_spec "android.signing.alias" "tasbih-key"
-          set_spec "android.signing.storepass" "123456"
-          set_spec "android.signing.keypass" "123456"
+          # Release signing
+          safe_set "android.signing.keystore" "tasbih-release.keystore"
+          safe_set "android.signing.alias" "tasbih-key"
+          safe_set "android.signing.storepass" "123456"
+          safe_set "android.signing.keypass" "123456"
 
-          echo "=== buildozer.spec (تنظیمات نهایی) ==="
-          grep -E "^(android\.|log_level)" buildozer.spec | head -20
+          echo "=== buildozer.spec ==="
+          grep -E "^android\.(api|minapi|archs|signing|accept)" buildozer.spec || true
 
-      - name: Cache Buildozer
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.buildozer
-            .buildozer
-          key: buildozer-v2-${{ hashFiles('buildozer.spec') }}
-          restore-keys: |
-            buildozer-v2-
-
-      - name: Build Release APK
+      - name: Clean old builds
         run: |
-          export JAVA_HOME=$JAVA_HOME_17_X64
-          export PATH=$JAVA_HOME_17_X64/bin:$PATH
-          buildozer android clean
-          buildozer android release
-        env:
-          JAVA_HOME: ${{ env.JAVA_HOME_17_X64 }}
+          # فقط با rm پاک می‌کنیم — buildozer clean اجرا نمی‌کنیم
+          rm -rf .buildozer bin/
+
+      - name: Build Release APK via Docker
+        run: |
+          docker run --rm             -v "$(pwd):/home/user/hostcwd"             -v "$HOME/.buildozer:/home/user/.buildozer"             ghcr.io/kivy/buildozer:latest             android release
 
       - name: Upload Signed APK
         uses: actions/upload-artifact@v4

@@ -11,7 +11,6 @@ fullscreen = 0
 android.api = 33
 android.minapi = 21
 android.archs = arm64-v8a, armeabi-v7a
-android.skip_update = True
 android.keystore = ./release.keystore
 android.keyalias = tasbihnoor
 

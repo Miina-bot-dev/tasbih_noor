@@ -7,7 +7,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -18,13 +18,28 @@ jobs:
           sudo apt-get install -y git zip unzip openjdk-17-jdk python3-pip autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev liblzma-dev libffi-dev libssl-dev automake cmake
           pip install --upgrade pip
           pip install buildozer cython
-      - uses: actions/cache@v4
-        with:
-          path: |
-            ~/.buildozer
-            .buildozer
-          key: buildozer-release-${{ hashFiles('buildozer.spec') }}
-          restore-keys: buildozer-release-
+      - run: |
+          mkdir -p ~/.buildozer/android/platform
+          cd ~/.buildozer/android/platform
+          rm -rf android-sdk
+          wget -q --tries=3 --timeout=60 https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip
+          unzip -q commandlinetools-linux-9477386_latest.zip
+          mkdir -p android-sdk/cmdline-tools
+          mv cmdline-tools android-sdk/cmdline-tools/latest
+          export PATH="$PATH:$HOME/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin:$HOME/.buildozer/android/platform/android-sdk/platform-tools"
+          export ANDROID_SDK_ROOT="$HOME/.buildozer/android/platform/android-sdk"
+          yes | sdkmanager --licenses || true
+          sdkmanager "build-tools;33.0.0" "platforms;android-33" "platform-tools"
+      - run: |
+          cd ~/.buildozer/android/platform
+          rm -rf android-ndk-r25b
+          wget -q --tries=3 --timeout=60 https://dl.google.com/android/repository/android-ndk-r25b-linux.zip
+          unzip -q android-ndk-r25b-linux.zip
+      - run: |
+          cd ~/.buildozer/android/platform
+          rm -rf apache-ant-1.9.4
+          wget -q --tries=3 --timeout=60 https://archive.apache.org/dist/ant/binaries/apache-ant-1.9.4-bin.zip
+          unzip -q apache-ant-1.9.4-bin.zip
       - run: |
           if [ ! -f release.keystore ]; then
             keytool -genkey -v \
@@ -37,9 +52,11 @@ jobs:
               -storepass tasbihnoor123 \
               -keypass tasbihnoor123
           fi
-      - run: buildozer android release
+      - run: |
+          export PATH="$PATH:$HOME/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin:$HOME/.buildozer/android/platform/android-sdk/platform-tools:$HOME/.buildozer/android/platform/apache-ant-1.9.4/bin"
+          export ANDROID_SDK_ROOT="$HOME/.buildozer/android/platform/android-sdk"
+          buildozer android release
         env:
-          APP_ANDROID_ACCEPT_SDK_LICENSE: 1
           BUILDOZER_WARN_ON_ROOT: 0
           BUILDOZER_ANDROID_KEYSTORE_PASS: tasbihnoor123
           BUILDOZER_ANDROID_KEYALIAS_PASS: tasbihnoor123

@@ -6,6 +6,7 @@ source.dir = .
 source.include_exts = py,png,jpg,jpeg,kv,atlas,ttf,json,txt,md
 version = 1.0.0
 requirements = python3,kivy==2.2.1,arabic-reshaper,python-bidi,setuptools,wheel,six,pillow
+p4a.local_recipes = ./recipes
 
 orientation = portrait
 fullscreen = 0
@@ -13,10 +14,8 @@ fullscreen = 0
 android.presplash_color = #FFFFFF
 android.permissions = INTERNET
 
-android.api = 34
+android.api = 33
 android.minapi = 21
-android.sdk = 34
-android.build_tools = 34.0.0
 android.ndk = 25b
 android.ndk_api = 21
 android.archs = arm64-v8a, armeabi-v7a
@@ -26,7 +25,7 @@ android.accept_sdk_license = True
 android.allow_backup = False
 android.release_artifact = apk
 
-android.signing.keystore = release.keystore
+android.signing.keystore = tasbihnoor.keystore
 android.signing.alias = tasbihnoor
 
 [buildozer]

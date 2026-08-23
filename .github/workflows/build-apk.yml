@@ -1,4 +1,4 @@
-name: Build Release APK
+name: Build Signed APK
 
 on:
   workflow_dispatch:
@@ -6,78 +6,109 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    container:
-      image: ghcr.io/kivy/buildozer:latest
-      options: --user root
     timeout-minutes: 120
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Create Keystore
+      - name: Generate Keystore (matching buildozer.spec)
         run: |
-          if [ ! -f release.keystore ]; then
-            keytool -genkey -v \
-              -keystore release.keystore \
-              -alias tasbihnoor \
-              -keyalg RSA \
-              -keysize 2048 \
-              -validity 10000 \
-              -dname "CN=Tasbih Noor, OU=App, O=Mina, L=Tehran, ST=Tehran, C=IR" \
-              -storepass tasbihnoor123 \
-              -keypass tasbihnoor123
-          fi
+          keytool -genkey -v \
+            -keystore tasbihnoor.keystore \
+            -alias tasbihnoor \
+            -keyalg RSA -keysize 2048 -validity 10000 \
+            -storepass "123456" \
+            -keypass "123456" \
+            -dname "CN=TasbihApp, OU=., O=., L=., ST=., C=IR"
 
-      - name: Force-install matching SDK build-tools and platform
+      - name: Fix buildozer.spec completely
         run: |
-          SDKMANAGER=$(find / -name "sdkmanager" 2>/dev/null | head -n 1)
-          echo "Using sdkmanager at: $SDKMANAGER"
-          chmod +x "$SDKMANAGER"
-          yes | "$SDKMANAGER" --licenses > /dev/null 2>&1 || true
-          "$SDKMANAGER" "platform-tools" "platforms;android-34" "build-tools;34.0.0"
+          sed -i '/^android\.api =/d' buildozer.spec
+          sed -i '/^android\.sdk =/d' buildozer.spec
+          sed -i '/^android\.build_tools =/d' buildozer.spec
+          sed -i '/^android\.ndk =/d' buildozer.spec
+          sed -i '/^android\.ndk_api =/d' buildozer.spec
+          sed -i '/^android\.signing\./d' buildozer.spec
+          sed -i '/^android\.gradle_dependencies =/d' buildozer.spec
+          sed -i '/^p4a\.branch =/d' buildozer.spec
 
-      - name: Build Release APK
-        run: |
-          export BUILDOZER_ANDROID_KEYSTORE_PASS=tasbihnoor123
-          export BUILDOZER_ANDROID_KEYALIAS_PASS=tasbihnoor123
-          buildozer android release
-        env:
-          BUILDOZER_WARN_ON_ROOT: 0
+          {
+            echo ""
+            echo "# === Auto-fixed by CI ==="
+            echo "android.api = 33"
+            echo "android.minapi = 21"
+            echo "android.ndk = 25b"
+            echo "android.ndk_api = 21"
+            echo "android.archs = arm64-v8a, armeabi-v7a"
+            echo "android.accept_sdk_license = True"
+            echo "android.signing.keystore = tasbihnoor.keystore"
+            echo "android.signing.alias = tasbihnoor"
+            echo "android.signing.storepass = 123456"
+            echo "android.signing.keypass = 123456"
+          } >> buildozer.spec
 
-      - name: Locate build-tools for signing
-        id: buildtools
+          echo "=== Final buildozer.spec ==="
+          cat buildozer.spec
+
+      - name: Clean build cache
         run: |
-          BT=$(find / -type d -path "*build-tools/34.0.0" 2>/dev/null | head -n 1)
-          if [ -z "$BT" ]; then
-            BT=$(find / -type d -path "*build-tools*" 2>/dev/null | sort -V | tail -n 1)
-          fi
-          echo "Found build-tools at: $BT"
-          echo "path=$BT" >> "$GITHUB_OUTPUT"
+          rm -rf .buildozer bin/ "$HOME/.buildozer"
+
+      - name: Build Release APK (with auto-retry on network errors)
+        run: |
+          MAX_ATTEMPTS=5
+          ATTEMPT=1
+          until [ $ATTEMPT -gt $MAX_ATTEMPTS ]
+          do
+            echo "=== Build attempt $ATTEMPT of $MAX_ATTEMPTS ==="
+            if docker run --rm \
+              --dns 8.8.8.8 --dns 1.1.1.1 \
+              -e PIP_DEFAULT_TIMEOUT=120 \
+              -e PIP_RETRIES=10 \
+              -v "$(pwd):/home/user/hostcwd" \
+              -v "$HOME/.buildozer:/home/user/.buildozer" \
+              ghcr.io/kivy/buildozer:latest \
+              android release; then
+              echo "Build succeeded on attempt $ATTEMPT"
+              exit 0
+            fi
+            echo "Attempt $ATTEMPT failed. Waiting 60 seconds before retry..."
+            ATTEMPT=$((ATTEMPT+1))
+            sleep 60
+          done
+          echo "All $MAX_ATTEMPTS attempts failed."
+          exit 1
+
+      - name: List build output (debug)
+        run: |
+          find bin -type f -name "*.apk" -exec ls -lh {} \;
 
       - name: Re-sign APK with apksigner (v1 + v2 + v3 scheme)
         run: |
           set -e
-          BT="${{ steps.buildtools.outputs.path }}"
           APK=$(find bin -name "*-release-unsigned.apk" | head -n 1)
           if [ -z "$APK" ]; then
             APK=$(find bin -name "*-release*.apk" | head -n 1)
           fi
           echo "Source APK: $APK"
-          echo "Build-tools: $BT"
+
+          BUILD_TOOLS=$(find "$HOME/.buildozer" -type d -path "*build-tools*" | sort -V | tail -n 1)
+          echo "Using build-tools: $BUILD_TOOLS"
+          ZIPALIGN="$BUILD_TOOLS/zipalign"
+          APKSIGNER="$BUILD_TOOLS/apksigner"
 
           mkdir -p bin/final
-          "$BT/zipalign" -v -p 4 "$APK" bin/final/aligned.apk
+          "$ZIPALIGN" -v -p 4 "$APK" bin/final/aligned.apk
 
-          "$BT/apksigner" sign \
-            --ks release.keystore \
-            --ks-pass pass:tasbihnoor123 \
-            --key-pass pass:tasbihnoor123 \
+          "$APKSIGNER" sign \
+            --ks tasbihnoor.keystore \
+            --ks-pass "pass:123456" \
+            --key-pass "pass:123456" \
             --ks-key-alias tasbihnoor \
             --out bin/final/tasbihnoor-signed.apk \
             bin/final/aligned.apk
 
           echo "=== Verifying signature (must show v1/v2/v3 = true) ==="
-          "$BT/apksigner" verify -v --print-certs bin/final/tasbihnoor-signed.apk
+          "$APKSIGNER" verify -v --print-certs bin/final/tasbihnoor-signed.apk
 
       - name: Upload Signed APK
         uses: actions/upload-artifact@v4
@@ -89,4 +120,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Keystore-Backup
-          path: release.keystore
+          path: tasbihnoor.keystore

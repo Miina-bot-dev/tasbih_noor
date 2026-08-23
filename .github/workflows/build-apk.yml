@@ -32,6 +32,7 @@ jobs:
         run: |
           SDKMANAGER=$(find / -name "sdkmanager" 2>/dev/null | head -n 1)
           echo "Using sdkmanager at: $SDKMANAGER"
+          chmod +x "$SDKMANAGER"
           yes | "$SDKMANAGER" --licenses > /dev/null 2>&1 || true
           "$SDKMANAGER" "platform-tools" "platforms;android-34" "build-tools;34.0.0"
 

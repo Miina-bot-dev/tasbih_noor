@@ -1,8 +1,6 @@
 name: Build Release APK
 
 on:
-  push:
-    branches: [main, master]
   workflow_dispatch:
 
 jobs:
@@ -30,6 +28,13 @@ jobs:
               -keypass tasbihnoor123
           fi
 
+      - name: Force-install matching SDK build-tools and platform
+        run: |
+          SDKMANAGER=$(find / -name "sdkmanager" 2>/dev/null | head -n 1)
+          echo "Using sdkmanager at: $SDKMANAGER"
+          yes | "$SDKMANAGER" --licenses > /dev/null 2>&1 || true
+          "$SDKMANAGER" "platform-tools" "platforms;android-34" "build-tools;34.0.0"
+
       - name: Build Release APK
         run: |
           export BUILDOZER_ANDROID_KEYSTORE_PASS=tasbihnoor123
@@ -38,8 +43,49 @@ jobs:
         env:
           BUILDOZER_WARN_ON_ROOT: 0
 
-      - name: Upload APK
+      - name: Locate build-tools for signing
+        id: buildtools
+        run: |
+          BT=$(find / -type d -path "*build-tools/34.0.0" 2>/dev/null | head -n 1)
+          if [ -z "$BT" ]; then
+            BT=$(find / -type d -path "*build-tools*" 2>/dev/null | sort -V | tail -n 1)
+          fi
+          echo "Found build-tools at: $BT"
+          echo "path=$BT" >> "$GITHUB_OUTPUT"
+
+      - name: Re-sign APK with apksigner (v1 + v2 + v3 scheme)
+        run: |
+          set -e
+          BT="${{ steps.buildtools.outputs.path }}"
+          APK=$(find bin -name "*-release-unsigned.apk" | head -n 1)
+          if [ -z "$APK" ]; then
+            APK=$(find bin -name "*-release*.apk" | head -n 1)
+          fi
+          echo "Source APK: $APK"
+          echo "Build-tools: $BT"
+
+          mkdir -p bin/final
+          "$BT/zipalign" -v -p 4 "$APK" bin/final/aligned.apk
+
+          "$BT/apksigner" sign \
+            --ks release.keystore \
+            --ks-pass pass:tasbihnoor123 \
+            --key-pass pass:tasbihnoor123 \
+            --ks-key-alias tasbihnoor \
+            --out bin/final/tasbihnoor-signed.apk \
+            bin/final/aligned.apk
+
+          echo "=== Verifying signature (must show v1/v2/v3 = true) ==="
+          "$BT/apksigner" verify -v --print-certs bin/final/tasbihnoor-signed.apk
+
+      - name: Upload Signed APK
         uses: actions/upload-artifact@v4
         with:
-          name: release-apk
-          path: bin/*.apk
+          name: Tasbih-Signed-APK
+          path: bin/final/tasbihnoor-signed.apk
+
+      - name: Upload Keystore
+        uses: actions/upload-artifact@v4
+        with:
+          name: Keystore-Backup
+          path: release.keystore

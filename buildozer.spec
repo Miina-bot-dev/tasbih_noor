@@ -6,7 +6,6 @@ source.dir = .
 source.include_exts = py,png,jpg,jpeg,kv,atlas,ttf,json,txt,md
 version = 1.0.0
 requirements = python3,kivy==2.2.1,arabic-reshaper,python-bidi,setuptools,wheel,six,pillow
-p4a.local_recipes = ./recipes
 
 orientation = portrait
 fullscreen = 0

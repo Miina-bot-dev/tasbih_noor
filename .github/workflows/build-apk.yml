@@ -70,10 +70,10 @@ jobs:
       - name: Show error summary if build failed
         if: always()
         run: |
-          if [ ! -f bin/*-release-unsigned.apk ] 2>/dev/null && ! ls bin/*.apk >/dev/null 2>&1; then
-            echo "## Build Failed - Last 100 lines of error log" >> $GITHUB_STEP_SUMMARY
+          if ! ls bin/*.apk >/dev/null 2>&1; then
+            echo "## Build Failed - Key error lines" >> $GITHUB_STEP_SUMMARY
             echo '```' >> $GITHUB_STEP_SUMMARY
-            tail -n 100 build_log.txt >> $GITHUB_STEP_SUMMARY
+            grep -n -B 30 "Command failed\|Traceback\|Exception:\|Error:" build_log.txt | tail -n 150 >> $GITHUB_STEP_SUMMARY
             echo '```' >> $GITHUB_STEP_SUMMARY
           fi
 

@@ -10,19 +10,23 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install system dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            python3-pip python3-venv build-essential git zip unzip openjdk-17-jdk \
-            autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev \
-            libtinfo5 cmake libffi-dev libssl-dev
+      - name: Setup Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
 
-      - name: Install buildozer and dependencies
-        run: |
-          pip3 install --upgrade buildozer cython==0.29.36 virtualenv
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
 
-      - name: Generate Keystore (matching buildozer.spec)
+      - name: Install buildozer
+        run: |
+          pip install --upgrade pip
+          pip install buildozer cython==0.29.36
+
+      - name: Generate Keystore
         run: |
           keytool -genkey -v \
             -keystore tasbihnoor.keystore \
@@ -32,40 +36,94 @@ jobs:
             -keypass "123456" \
             -dname "CN=TasbihApp, OU=., O=., L=., ST=., C=IR"
 
-      - name: Fix buildozer.spec completely
+      - name: Create clean buildozer.spec (using pre-installed SDK/NDK)
         run: |
-          sed -i '/^android\.api =/d' buildozer.spec
-          sed -i '/^android\.sdk =/d' buildozer.spec
-          sed -i '/^android\.build_tools =/d' buildozer.spec
-          sed -i '/^android\.ndk =/d' buildozer.spec
-          sed -i '/^android\.ndk_api =/d' buildozer.spec
-          sed -i '/^android\.signing\./d' buildozer.spec
-          sed -i '/^android\.gradle_dependencies =/d' buildozer.spec
-          sed -i '/^p4a\.branch =/d' buildozer.spec
-          sed -i '/^p4a\.local_recipes =/d' buildozer.spec
+          cat > buildozer.spec << EOF
+          [app]
+          title = Tasbih Noor
+          package.name = tasbihnoor
+          package.domain = com.tasbihnoor.app
+          source.dir = .
+          source.include_exts = py,png,jpg,jpeg,kv,atlas,ttf,json,txt,md
+          version = 1.0.0
+          requirements = python3,kivy==2.2.1,arabic-reshaper,python-bidi,setuptools,wheel,six,pillow
 
-          {
-            echo ""
-            echo "# === Auto-fixed by CI ==="
-            echo "android.api = 33"
-            echo "android.minapi = 21"
-            echo "android.ndk = 25b"
-            echo "android.ndk_api = 21"
-            echo "android.archs = arm64-v8a, armeabi-v7a"
-            echo "android.accept_sdk_license = True"
-            echo "android.signing.keystore = tasbihnoor.keystore"
-            echo "android.signing.alias = tasbihnoor"
-            echo "android.signing.storepass = 123456"
-            echo "android.signing.keypass = 123456"
-          } >> buildozer.spec
+          orientation = portrait
+          fullscreen = 0
 
+          android.presplash_color = #FFFFFF
+          android.permissions = INTERNET
+
+          android.api = 33
+          android.minapi = 21
+          android.ndk_api = 21
+          android.archs = arm64-v8a, armeabi-v7a
+
+          android.sdk_path = $ANDROID_SDK_ROOT
+          android.ndk_path = $ANDROID_NDK_ROOT
+          android.skip_update = True
+
+          android.private_storage = True
+          android.accept_sdk_license = True
+          android.allow_backup = False
+          android.release_artifact = apk
+
+          android.signing.keystore = tasbihnoor.keystore
+          android.signing.alias = tasbihnoor
+
+          [buildozer]
+          log_level = 2
+          warn_on_root = 0
+          EOF
           echo "=== Final buildozer.spec ==="
           cat buildozer.spec
+
+      - name: Clean build cache
+        run: |
+          rm -rf .buildozer bin/
+
+      - name: Pre-fetch freetype source (bypass broken savannah.gnu.org mirror)
+        run: |
+          set -e
+          TARGET_DIR=".buildozer/android/platform/build-arm64-v8a_armeabi-v7a/packages/freetype"
+          mkdir -p "$TARGET_DIR"
+          FILE="$TARGET_DIR/freetype-2.14.1.tar.gz"
+
+          MIRRORS=(
+            "https://gitlab.freedesktop.org/freetype/freetype/-/archive/VER-2-14-1/freetype-VER-2-14-1.tar.gz"
+            "https://sourceforge.net/projects/freetype/files/freetype2/2.14.1/freetype-2.14.1.tar.gz/download"
+            "https://download.savannah.gnu.org/releases/freetype/freetype-2.14.1.tar.gz"
+          )
+
+          SUCCESS=0
+          for URL in "${MIRRORS[@]}"; do
+            echo "Trying mirror: $URL"
+            if curl -L --fail --retry 5 --retry-delay 5 -o "$FILE" "$URL"; then
+              if gzip -t "$FILE" 2>/dev/null; then
+                echo "Downloaded and verified successfully from: $URL"
+                SUCCESS=1
+                break
+              else
+                echo "File from $URL is not a valid gzip archive, trying next mirror..."
+                rm -f "$FILE"
+              fi
+            else
+              echo "Failed to download from $URL, trying next mirror..."
+            fi
+          done
+
+          if [ "$SUCCESS" -ne 1 ]; then
+            echo "WARNING: Could not pre-fetch freetype from any mirror. Build will attempt normal download and may fail."
+          fi
 
       - name: Build Release APK
         run: |
           yes | buildozer android release 2>&1 | tee build_log.txt
         continue-on-error: true
+        env:
+          BUILDOZER_WARN_ON_ROOT: 0
+          BUILDOZER_ANDROID_KEYSTORE_PASS: "123456"
+          BUILDOZER_ANDROID_KEYALIAS_PASS: "123456"
 
       - name: Show error summary if build failed
         if: always()
@@ -90,7 +148,7 @@ jobs:
           fi
           echo "Source APK: $APK"
 
-          BUILD_TOOLS=$(find "$HOME/.buildozer" -type d -path "*build-tools*" | sort -V | tail -n 1)
+          BUILD_TOOLS=$(find "$ANDROID_SDK_ROOT/build-tools" -maxdepth 1 -type d | sort -V | tail -n 1)
           echo "Using build-tools: $BUILD_TOOLS"
           ZIPALIGN="$BUILD_TOOLS/zipalign"
           APKSIGNER="$BUILD_TOOLS/apksigner"

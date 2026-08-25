@@ -5,10 +5,22 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     timeout-minutes: 120
     steps:
       - uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            python3-pip python3-venv build-essential git zip unzip openjdk-17-jdk \
+            autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev \
+            libtinfo5 cmake libffi-dev libssl-dev
+
+      - name: Install buildozer and dependencies
+        run: |
+          pip3 install --upgrade buildozer cython==0.29.36 virtualenv
 
       - name: Generate Keystore (matching buildozer.spec)
         run: |
@@ -30,6 +42,7 @@ jobs:
           sed -i '/^android\.signing\./d' buildozer.spec
           sed -i '/^android\.gradle_dependencies =/d' buildozer.spec
           sed -i '/^p4a\.branch =/d' buildozer.spec
+          sed -i '/^p4a\.local_recipes =/d' buildozer.spec
 
           {
             echo ""
@@ -49,38 +62,24 @@ jobs:
           echo "=== Final buildozer.spec ==="
           cat buildozer.spec
 
-      - name: Clean build cache
+      - name: Build Release APK
         run: |
-          rm -rf .buildozer bin/ "$HOME/.buildozer"
+          yes | buildozer android release 2>&1 | tee build_log.txt
+        continue-on-error: true
 
-      - name: Build Release APK (with auto-retry on network errors)
+      - name: Show error summary if build failed
+        if: always()
         run: |
-          MAX_ATTEMPTS=5
-          ATTEMPT=1
-          until [ $ATTEMPT -gt $MAX_ATTEMPTS ]
-          do
-            echo "=== Build attempt $ATTEMPT of $MAX_ATTEMPTS ==="
-            if docker run --rm \
-              --dns 8.8.8.8 --dns 1.1.1.1 \
-              -e PIP_DEFAULT_TIMEOUT=120 \
-              -e PIP_RETRIES=10 \
-              -v "$(pwd):/home/user/hostcwd" \
-              -v "$HOME/.buildozer:/home/user/.buildozer" \
-              ghcr.io/kivy/buildozer:latest \
-              android release; then
-              echo "Build succeeded on attempt $ATTEMPT"
-              exit 0
-            fi
-            echo "Attempt $ATTEMPT failed. Waiting 60 seconds before retry..."
-            ATTEMPT=$((ATTEMPT+1))
-            sleep 60
-          done
-          echo "All $MAX_ATTEMPTS attempts failed."
-          exit 1
+          if [ ! -f bin/*-release-unsigned.apk ] 2>/dev/null && ! ls bin/*.apk >/dev/null 2>&1; then
+            echo "## Build Failed - Last 100 lines of error log" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            tail -n 100 build_log.txt >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          fi
 
-      - name: List build output (debug)
+      - name: Stop if no APK produced
         run: |
-          find bin -type f -name "*.apk" -exec ls -lh {} \;
+          ls bin/*.apk
 
       - name: Re-sign APK with apksigner (v1 + v2 + v3 scheme)
         run: |

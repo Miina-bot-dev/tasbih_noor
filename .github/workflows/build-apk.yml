@@ -129,9 +129,9 @@ jobs:
         if: always()
         run: |
           if ! ls bin/*.apk >/dev/null 2>&1; then
-            echo "## Build Failed - Key error lines" >> $GITHUB_STEP_SUMMARY
+            echo "## Build Failed - Full log tail" >> $GITHUB_STEP_SUMMARY
             echo '```' >> $GITHUB_STEP_SUMMARY
-            grep -n -B 30 "Command failed\|Traceback\|Exception:\|Error:" build_log.txt | tail -n 150 >> $GITHUB_STEP_SUMMARY
+            tail -n 200 build_log.txt >> $GITHUB_STEP_SUMMARY
             echo '```' >> $GITHUB_STEP_SUMMARY
           fi
 
@@ -148,13 +148,15 @@ jobs:
           fi
           echo "Source APK: $APK"
 
+          mkdir -p bin/final
+          python3 patch_debuggable.py "$APK" bin/final/patched-unsigned.apk
+
           BUILD_TOOLS=$(find "$ANDROID_SDK_ROOT/build-tools" -maxdepth 1 -type d | sort -V | tail -n 1)
           echo "Using build-tools: $BUILD_TOOLS"
           ZIPALIGN="$BUILD_TOOLS/zipalign"
           APKSIGNER="$BUILD_TOOLS/apksigner"
 
-          mkdir -p bin/final
-          "$ZIPALIGN" -v -p 4 "$APK" bin/final/aligned.apk
+          "$ZIPALIGN" -v -p 4 bin/final/patched-unsigned.apk bin/final/aligned.apk
 
           "$APKSIGNER" sign \
             --ks tasbihnoor.keystore \

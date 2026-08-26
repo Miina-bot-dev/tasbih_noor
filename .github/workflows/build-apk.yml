@@ -116,6 +116,16 @@ jobs:
             echo "WARNING: Could not pre-fetch freetype from any mirror. Build will attempt normal download and may fail."
           fi
 
+      - name: Fix sdkmanager path for buildozer compatibility
+        run: |
+          mkdir -p "$ANDROID_SDK_ROOT/tools/bin"
+          SDKMANAGER_REAL=$(find "$ANDROID_SDK_ROOT/cmdline-tools" -name sdkmanager | head -n 1)
+          echo "Found real sdkmanager at: $SDKMANAGER_REAL"
+          ln -sf "$SDKMANAGER_REAL" "$ANDROID_SDK_ROOT/tools/bin/sdkmanager"
+          chmod +x "$ANDROID_SDK_ROOT/tools/bin/sdkmanager"
+          echo "=== Verifying symlink ==="
+          ls -la "$ANDROID_SDK_ROOT/tools/bin/sdkmanager"
+
       - name: Build Release APK
         run: |
           yes | buildozer android release 2>&1 | tee build_log.txt

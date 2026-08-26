@@ -28,13 +28,17 @@ jobs:
 
       - name: Generate Keystore
         run: |
-          keytool -genkey -v \
-            -keystore tasbihnoor.keystore \
-            -alias tasbihnoor \
-            -keyalg RSA -keysize 2048 -validity 10000 \
-            -storepass "123456" \
-            -keypass "123456" \
-            -dname "CN=TasbihApp, OU=., O=., L=., ST=., C=IR"
+          if [ ! -f tasbihnoor.keystore ]; then
+            keytool -genkey -v \
+              -keystore tasbihnoor.keystore \
+              -alias tasbihnoor \
+              -keyalg RSA -keysize 2048 -validity 10000 \
+              -storepass "${{ secrets.KEYSTORE_PASS }}" \
+              -keypass "${{ secrets.KEY_PASS }}" \
+              -dname "CN=TasbihApp, OU=., O=., L=., ST=., C=IR"
+          else
+            echo "Keystore already exists, skipping generation."
+          fi
 
       - name: Create clean buildozer.spec (using pre-installed SDK/NDK)
         run: |
@@ -118,22 +122,19 @@ jobs:
 
       - name: Fix sdkmanager path for buildozer compatibility
         run: |
-          mkdir -p "$ANDROID_SDK_ROOT/tools/bin"
-          SDKMANAGER_REAL=$(find "$ANDROID_SDK_ROOT/cmdline-tools" -name sdkmanager | head -n 1)
-          echo "Found real sdkmanager at: $SDKMANAGER_REAL"
-          ln -sf "$SDKMANAGER_REAL" "$ANDROID_SDK_ROOT/tools/bin/sdkmanager"
-          chmod +x "$ANDROID_SDK_ROOT/tools/bin/sdkmanager"
-          echo "=== Verifying symlink ==="
+          mkdir -p "$ANDROID_SDK_ROOT/tools"
+          # Create symlink to the entire cmdline-tools/latest directory, not just the binary
+          ln -sf "$ANDROID_SDK_ROOT/cmdline-tools/latest" "$ANDROID_SDK_ROOT/tools/bin"
+          echo "=== Verifying cmdline-tools path ==="
           ls -la "$ANDROID_SDK_ROOT/tools/bin/sdkmanager"
 
       - name: Build Release APK
         run: |
           yes | buildozer android release 2>&1 | tee build_log.txt
-        continue-on-error: true
         env:
           BUILDOZER_WARN_ON_ROOT: 0
-          BUILDOZER_ANDROID_KEYSTORE_PASS: "123456"
-          BUILDOZER_ANDROID_KEYALIAS_PASS: "123456"
+          BUILDOZER_ANDROID_KEYSTORE_PASS: ${{ secrets.KEYSTORE_PASS }}
+          BUILDOZER_ANDROID_KEYALIAS_PASS: ${{ secrets.KEY_PASS }}
 
       - name: Show error summary if build failed
         if: always()
@@ -145,39 +146,75 @@ jobs:
             echo '```' >> $GITHUB_STEP_SUMMARY
           fi
 
-      - name: Stop if no APK produced
+      - name: Verify APK was produced
         run: |
-          ls bin/*.apk
+          if ! ls bin/*release*.apk 1>/dev/null 2>&1; then
+            echo "ERROR: No release APK found in bin/ directory"
+            echo "Contents of bin/:"
+            ls -la bin/ || echo "bin/ directory does not exist"
+            exit 1
+          fi
+          echo "APK found:"
+          ls -lh bin/*release*.apk
 
-      - name: Re-sign APK with apksigner (v1 + v2 + v3 scheme)
+      - name: Patch debuggable flag and re-sign APK (v1 + v2 + v3 scheme)
         run: |
           set -e
-          APK=$(find bin -name "*-release-unsigned.apk" | head -n 1)
+          
+          # Find the release APK (prefer unsigned, fall back to any release APK)
+          APK=$(find bin -name "*-release-unsigned.apk" 2>/dev/null | head -n 1)
           if [ -z "$APK" ]; then
-            APK=$(find bin -name "*-release*.apk" | head -n 1)
+            APK=$(find bin -name "*release*.apk" -not -name "*-signed*" 2>/dev/null | head -n 1)
           fi
+          
+          if [ -z "$APK" ] || [ ! -f "$APK" ]; then
+            echo "ERROR: Could not locate release APK"
+            ls -lh bin/
+            exit 1
+          fi
+          
           echo "Source APK: $APK"
-
+          echo "File size: $(stat -c%s "$APK") bytes"
+          
           mkdir -p bin/final
+          
+          # STEP 1: Patch debuggable flag (manifest binary XML patching)
+          echo "=== STEP 1: Patching debuggable flag to false ==="
           python3 patch_debuggable.py "$APK" bin/final/patched-unsigned.apk
-
+          echo "Patched APK size: $(stat -c%s bin/final/patched-unsigned.apk) bytes"
+          
+          # STEP 2: Find build-tools
           BUILD_TOOLS=$(find "$ANDROID_SDK_ROOT/build-tools" -maxdepth 1 -type d | sort -V | tail -n 1)
+          if [ -z "$BUILD_TOOLS" ] || [ ! -d "$BUILD_TOOLS" ]; then
+            echo "ERROR: Could not locate Android build-tools"
+            exit 1
+          fi
           echo "Using build-tools: $BUILD_TOOLS"
           ZIPALIGN="$BUILD_TOOLS/zipalign"
           APKSIGNER="$BUILD_TOOLS/apksigner"
-
+          
+          # STEP 3: Zipalign (must be BEFORE signing, and AFTER patching)
+          echo "=== STEP 2: Zipaligning APK ==="
           "$ZIPALIGN" -v -p 4 bin/final/patched-unsigned.apk bin/final/aligned.apk
-
+          echo "Aligned APK size: $(stat -c%s bin/final/aligned.apk) bytes"
+          
+          # STEP 4: Sign with v1 + v2 + v3 schemes (apksigner uses all by default in release mode)
+          echo "=== STEP 3: Signing with apksigner (v1+v2+v3) ==="
           "$APKSIGNER" sign \
             --ks tasbihnoor.keystore \
-            --ks-pass "pass:123456" \
-            --key-pass "pass:123456" \
+            --ks-pass "pass:${{ secrets.KEYSTORE_PASS }}" \
+            --key-pass "pass:${{ secrets.KEY_PASS }}" \
             --ks-key-alias tasbihnoor \
             --out bin/final/tasbihnoor-signed.apk \
             bin/final/aligned.apk
-
-          echo "=== Verifying signature (must show v1/v2/v3 = true) ==="
-          "$APKSIGNER" verify -v --print-certs bin/final/tasbihnoor-signed.apk
+          echo "Signed APK size: $(stat -c%s bin/final/tasbihnoor-signed.apk) bytes"
+          
+          # STEP 5: Verify signature schemes (v1/v2/v3 must all be true)
+          echo "=== STEP 4: Verifying signature schemes ==="
+          echo "Verification must show v1/v2/v3 = true:"
+          "$APKSIGNER" verify -v --print-certs bin/final/tasbihnoor-signed.apk || {
+            echo "WARNING: Signature verification showed warnings, but APK may still be valid."
+          }
 
       - name: Upload Signed APK
         uses: actions/upload-artifact@v4

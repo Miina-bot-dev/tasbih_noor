@@ -24,8 +24,8 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
         with:
-          api-level: 34
-          build-tools-version: 34.0.0
+          api-level: 33
+          build-tools-version: 33.0.2
           ndk-version: 25.2.9519653
 
       - name: Install buildozer
@@ -33,19 +33,20 @@ jobs:
           pip install --upgrade pip setuptools wheel
           pip install cython>=3.0.0 buildozer
 
-      - name: Decode Keystore from Secret
+      - name: Generate Keystore
         run: |
-          if [ -z "${{ secrets.KEYSTORE_BASE64 }}" ]; then
-            echo "ERROR: KEYSTORE_BASE64 secret is not set!"
-            echo "Run: base64 -w 0 tasbihnoor.keystore"
-            echo "Add output to GitHub Secrets as KEYSTORE_BASE64"
-            exit 1
+          if [ ! -f tasbihnoor.keystore ]; then
+            keytool -genkey -v \
+              -keystore tasbihnoor.keystore \
+              -alias tasbihnoor \
+              -keyalg RSA -keysize 2048 -validity 10000 \
+              -storepass "${{ secrets.KEYSTORE_PASS }}" \
+              -keypass "${{ secrets.KEY_PASS }}" \
+              -dname "CN=TasbihApp, OU=., O=., L=., ST=., C=IR"
           fi
-          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > tasbihnoor.keystore
-          ls -la tasbihnoor.keystore
 
       - name: Clean cache
-        run: rm -rf .buildozer/bin/ bin/
+        run: rm -rf .buildozer bin/
 
       - name: Build APK
         run: yes | buildozer android release 2>&1 | tee build_log.txt
@@ -54,9 +55,41 @@ jobs:
           BUILDOZER_ANDROID_KEYSTORE_PASS: ${{ secrets.KEYSTORE_PASS }}
           BUILDOZER_ANDROID_KEYALIAS_PASS: ${{ secrets.KEY_PASS }}
 
+      - name: Patch debuggable flag (fixes "incompatible/unsafe" install error)
+        if: success()
+        run: |
+          set -e
+          APK=$(find bin -name "*release*.apk" -not -name "*-signed*" | head -1)
+          echo "Source APK: $APK"
+          mkdir -p bin/final
+          python3 patch_debuggable.py "$APK" bin/final/patched-unsigned.apk
+
+      - name: Sign APK
+        if: success()
+        run: |
+          set -e
+          BUILD_TOOLS=$(find "$ANDROID_SDK_ROOT/build-tools" -maxdepth 1 -type d | sort -V | tail -1)
+          "$BUILD_TOOLS/zipalign" -v -p 4 bin/final/patched-unsigned.apk bin/final/aligned.apk
+          "$BUILD_TOOLS/apksigner" sign \
+            --ks tasbihnoor.keystore \
+            --ks-pass "pass:${{ secrets.KEYSTORE_PASS }}" \
+            --key-pass "pass:${{ secrets.KEY_PASS }}" \
+            --ks-key-alias tasbihnoor \
+            --out bin/final/tasbihnoor-signed.apk \
+            bin/final/aligned.apk
+          echo "=== Verifying signature (v1/v2/v3 should be true) ==="
+          "$BUILD_TOOLS/apksigner" verify -v --print-certs bin/final/tasbihnoor-signed.apk
+
       - name: Upload APK
         if: success()
         uses: actions/upload-artifact@v4
         with:
           name: Tasbih-Signed-APK
-          path: bin/*release*.apk
+          path: bin/final/tasbihnoor-signed.apk
+
+      - name: Upload Keystore
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Keystore-Backup
+          path: tasbihnoor.keystore

@@ -21,10 +21,17 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          api-level: 33
+          build-tools-version: 33.0.2
+          ndk-version: 25.2.9519653
+
       - name: Install buildozer
         run: |
-          pip install --upgrade pip
-          pip install buildozer cython==0.29.36
+          pip install --upgrade pip setuptools wheel
+          pip install cython>=3.0.0 buildozer
 
       - name: Generate Keystore
         run: |
@@ -36,193 +43,41 @@ jobs:
               -storepass "${{ secrets.KEYSTORE_PASS }}" \
               -keypass "${{ secrets.KEY_PASS }}" \
               -dname "CN=TasbihApp, OU=., O=., L=., ST=., C=IR"
-          else
-            echo "Keystore already exists, skipping generation."
           fi
 
-      - name: Create clean buildozer.spec (using pre-installed SDK/NDK)
-        run: |
-          cat > buildozer.spec << EOF
-          [app]
-          title = Tasbih Noor
-          package.name = tasbihnoor
-          package.domain = com.tasbihnoor.app
-          source.dir = .
-          source.include_exts = py,png,jpg,jpeg,kv,atlas,ttf,json,txt,md
-          version = 1.0.0
-          requirements = python3,kivy==2.2.1,arabic-reshaper,python-bidi,setuptools,wheel,six,pillow
+      - name: Clean cache
+        run: rm -rf .buildozer bin/
 
-          orientation = portrait
-          fullscreen = 0
-
-          android.presplash_color = #FFFFFF
-          android.permissions = INTERNET
-
-          android.api = 33
-          android.minapi = 21
-          android.ndk_api = 21
-          android.archs = arm64-v8a, armeabi-v7a
-
-          android.sdk_path = $ANDROID_SDK_ROOT
-          android.ndk_path = $ANDROID_NDK_ROOT
-          android.skip_update = True
-
-          android.private_storage = True
-          android.accept_sdk_license = True
-          android.allow_backup = False
-          android.release_artifact = apk
-
-          android.signing.keystore = tasbihnoor.keystore
-          android.signing.alias = tasbihnoor
-
-          [buildozer]
-          log_level = 2
-          warn_on_root = 0
-          EOF
-          echo "=== Final buildozer.spec ==="
-          cat buildozer.spec
-
-      - name: Clean build cache
-        run: |
-          rm -rf .buildozer bin/
-
-      - name: Pre-fetch freetype source (bypass broken savannah.gnu.org mirror)
-        run: |
-          set -e
-          TARGET_DIR=".buildozer/android/platform/build-arm64-v8a_armeabi-v7a/packages/freetype"
-          mkdir -p "$TARGET_DIR"
-          FILE="$TARGET_DIR/freetype-2.14.1.tar.gz"
-
-          MIRRORS=(
-            "https://gitlab.freedesktop.org/freetype/freetype/-/archive/VER-2-14-1/freetype-VER-2-14-1.tar.gz"
-            "https://sourceforge.net/projects/freetype/files/freetype2/2.14.1/freetype-2.14.1.tar.gz/download"
-            "https://download.savannah.gnu.org/releases/freetype/freetype-2.14.1.tar.gz"
-          )
-
-          SUCCESS=0
-          for URL in "${MIRRORS[@]}"; do
-            echo "Trying mirror: $URL"
-            if curl -L --fail --retry 5 --retry-delay 5 -o "$FILE" "$URL"; then
-              if gzip -t "$FILE" 2>/dev/null; then
-                echo "Downloaded and verified successfully from: $URL"
-                SUCCESS=1
-                break
-              else
-                echo "File from $URL is not a valid gzip archive, trying next mirror..."
-                rm -f "$FILE"
-              fi
-            else
-              echo "Failed to download from $URL, trying next mirror..."
-            fi
-          done
-
-          if [ "$SUCCESS" -ne 1 ]; then
-            echo "WARNING: Could not pre-fetch freetype from any mirror. Build will attempt normal download and may fail."
-          fi
-
-      - name: Fix sdkmanager path for buildozer compatibility
-        run: |
-          mkdir -p "$ANDROID_SDK_ROOT/tools"
-          # Create symlink to the entire cmdline-tools/latest directory, not just the binary
-          ln -sf "$ANDROID_SDK_ROOT/cmdline-tools/latest" "$ANDROID_SDK_ROOT/tools/bin"
-          echo "=== Verifying cmdline-tools path ==="
-          ls -la "$ANDROID_SDK_ROOT/tools/bin/sdkmanager"
-
-      - name: Build Release APK
-        run: |
-          yes | buildozer android release 2>&1 | tee build_log.txt
+      - name: Build APK
+        run: yes | buildozer android release 2>&1 | tee build_log.txt
         env:
           BUILDOZER_WARN_ON_ROOT: 0
           BUILDOZER_ANDROID_KEYSTORE_PASS: ${{ secrets.KEYSTORE_PASS }}
           BUILDOZER_ANDROID_KEYALIAS_PASS: ${{ secrets.KEY_PASS }}
 
-      - name: Show error summary if build failed
-        if: always()
+      - name: Sign APK
+        if: success()
         run: |
-          if ! ls bin/*.apk >/dev/null 2>&1; then
-            echo "## Build Failed - Full log tail" >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
-            tail -n 200 build_log.txt >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
-          fi
-
-      - name: Verify APK was produced
-        run: |
-          if ! ls bin/*release*.apk 1>/dev/null 2>&1; then
-            echo "ERROR: No release APK found in bin/ directory"
-            echo "Contents of bin/:"
-            ls -la bin/ || echo "bin/ directory does not exist"
-            exit 1
-          fi
-          echo "APK found:"
-          ls -lh bin/*release*.apk
-
-      - name: Patch debuggable flag and re-sign APK (v1 + v2 + v3 scheme)
-        run: |
-          set -e
-          
-          # Find the release APK (prefer unsigned, fall back to any release APK)
-          APK=$(find bin -name "*-release-unsigned.apk" 2>/dev/null | head -n 1)
-          if [ -z "$APK" ]; then
-            APK=$(find bin -name "*release*.apk" -not -name "*-signed*" 2>/dev/null | head -n 1)
-          fi
-          
-          if [ -z "$APK" ] || [ ! -f "$APK" ]; then
-            echo "ERROR: Could not locate release APK"
-            ls -lh bin/
-            exit 1
-          fi
-          
-          echo "Source APK: $APK"
-          echo "File size: $(stat -c%s "$APK") bytes"
-          
+          APK=$(find bin -name "*release*.apk" -not -name "*-signed*" | head -1)
           mkdir -p bin/final
-          
-          # STEP 1: Patch debuggable flag (manifest binary XML patching)
-          echo "=== STEP 1: Patching debuggable flag to false ==="
-          python3 patch_debuggable.py "$APK" bin/final/patched-unsigned.apk
-          echo "Patched APK size: $(stat -c%s bin/final/patched-unsigned.apk) bytes"
-          
-          # STEP 2: Find build-tools
-          BUILD_TOOLS=$(find "$ANDROID_SDK_ROOT/build-tools" -maxdepth 1 -type d | sort -V | tail -n 1)
-          if [ -z "$BUILD_TOOLS" ] || [ ! -d "$BUILD_TOOLS" ]; then
-            echo "ERROR: Could not locate Android build-tools"
-            exit 1
-          fi
-          echo "Using build-tools: $BUILD_TOOLS"
-          ZIPALIGN="$BUILD_TOOLS/zipalign"
-          APKSIGNER="$BUILD_TOOLS/apksigner"
-          
-          # STEP 3: Zipalign (must be BEFORE signing, and AFTER patching)
-          echo "=== STEP 2: Zipaligning APK ==="
-          "$ZIPALIGN" -v -p 4 bin/final/patched-unsigned.apk bin/final/aligned.apk
-          echo "Aligned APK size: $(stat -c%s bin/final/aligned.apk) bytes"
-          
-          # STEP 4: Sign with v1 + v2 + v3 schemes (apksigner uses all by default in release mode)
-          echo "=== STEP 3: Signing with apksigner (v1+v2+v3) ==="
-          "$APKSIGNER" sign \
+          BUILD_TOOLS=$(find "$ANDROID_SDK_ROOT/build-tools" -maxdepth 1 -type d | sort -V | tail -1)
+          "$BUILD_TOOLS/zipalign" -v -p 4 "$APK" bin/final/aligned.apk
+          "$BUILD_TOOLS/apksigner" sign \
             --ks tasbihnoor.keystore \
             --ks-pass "pass:${{ secrets.KEYSTORE_PASS }}" \
-            --key-pass "pass:${{ secrets.KEY_PASS }}" \
             --ks-key-alias tasbihnoor \
             --out bin/final/tasbihnoor-signed.apk \
             bin/final/aligned.apk
-          echo "Signed APK size: $(stat -c%s bin/final/tasbihnoor-signed.apk) bytes"
-          
-          # STEP 5: Verify signature schemes (v1/v2/v3 must all be true)
-          echo "=== STEP 4: Verifying signature schemes ==="
-          echo "Verification must show v1/v2/v3 = true:"
-          "$APKSIGNER" verify -v --print-certs bin/final/tasbihnoor-signed.apk || {
-            echo "WARNING: Signature verification showed warnings, but APK may still be valid."
-          }
 
-      - name: Upload Signed APK
+      - name: Upload APK
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: Tasbih-Signed-APK
           path: bin/final/tasbihnoor-signed.apk
 
       - name: Upload Keystore
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: Keystore-Backup

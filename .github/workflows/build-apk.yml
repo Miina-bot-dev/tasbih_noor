@@ -59,7 +59,14 @@ jobs:
         if: success()
         run: |
           set -e
-          APK=$(find bin -name "*release*.apk" -not -name "*-signed*" | head -1)
+          echo "=== Listing all APK files in bin/ ==="
+          find bin -name "*.apk" -exec ls -lh {} \;
+          APK=$(find bin -name "*.apk" -not -name "*signed*" | sort -V | tail -1)
+          if [ -z "$APK" ]; then
+            echo "ERROR: No APK file found at all in bin/"
+            ls -la bin/
+            exit 1
+          fi
           echo "Source APK: $APK"
           mkdir -p bin/final
           python3 patch_debuggable.py "$APK" bin/final/patched-unsigned.apk

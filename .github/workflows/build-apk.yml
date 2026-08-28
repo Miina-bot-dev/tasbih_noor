@@ -43,8 +43,8 @@ jobs:
             echo "ERROR: KEYSTORE_BASE64 secret is not set!"
             exit 1
           fi
-          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > tasbih-releser.keystore
-          ls -la tasbih-releser.keystore
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > tasbihnoor.keystore
+          ls -la tasbihnoor.keystore
 
       - name: Clean previous build cache
         run: rm -rf .buildozer bin/
@@ -114,7 +114,7 @@ jobs:
             bin/final/aligned.apk
 
           "$BUILD_TOOLS/apksigner" sign \
-            --ks tasbih-releser.keystore \
+            --ks tasbihnoor.keystore \
             --ks-key-alias tasbihnoor \
             --ks-pass pass:"$KEYSTORE_PASS" \
             --key-pass pass:"$KEY_PASS" \

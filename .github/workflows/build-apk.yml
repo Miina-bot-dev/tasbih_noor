@@ -92,7 +92,7 @@ jobs:
         if: success()
         run: |
           mkdir -p bin/final
-          APK=$(find bin -name "*.apk" -not -name "*signed*" | sort -V | tail -1)
+          APK=$(find bin -name "*-unsigned.apk" | sort -V | tail -1)
           if [ -z "$APK" ]; then
             echo "ERROR: No unsigned APK found to patch"
             ls -la bin/

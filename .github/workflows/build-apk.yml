@@ -21,12 +21,6 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-        with:
-          api-level: 34
-          build-tools: 34.0.0
-
       - name: Install dependencies
         run: |
           sudo apt-get update
@@ -36,6 +30,10 @@ jobs:
 
       - name: Decode Keystore
         run: |
+          if [ -z "${{ secrets.KEYSTORE_BASE64 }}" ]; then
+            echo "ERROR: KEYSTORE_BASE64 not set"
+            exit 1
+          fi
           echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > tasbih-releser.keystore
 
       - name: Cache buildozer
@@ -44,18 +42,20 @@ jobs:
           path: |
             ~/.buildozer
             .buildozer
-          key: ${{ runner.os }}-buildozer-${{ hashFiles('buildozer.spec') }}
+          key: buildozer-${{ hashFiles('buildozer.spec') }}
+          restore-keys: |
+            buildozer-
 
       - name: Build APK
         run: |
           rm -rf bin/
+          export BUILDOZER_WARN_ON_ROOT=0
+          export BUILDOZER_ANDROID_KEYSTORE_PASS=${{ secrets.KEYSTORE_PASS }}
+          export BUILDOZER_ANDROID_KEYALIAS_PASS=${{ secrets.KEY_PASS }}
           yes | buildozer android release
-        env:
-          BUILDOZER_WARN_ON_ROOT: 0
-          BUILDOZER_ANDROID_KEYSTORE_PASS: ${{ secrets.KEYSTORE_PASS }}
-          BUILDOZER_ANDROID_KEYALIAS_PASS: ${{ secrets.KEY_PASS }}
 
       - name: Upload APK
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: Tasbih-Signed-APK

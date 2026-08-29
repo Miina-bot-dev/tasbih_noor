@@ -2,141 +2,61 @@ name: Build Signed APK
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
 
 jobs:
   build:
     runs-on: ubuntu-22.04
     timeout-minutes: 120
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
 
-      - name: Set up Java
+      - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Install system dependencies
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          api-level: 34
+          build-tools: 34.0.0
+
+      - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y \
-            build-essential git zip unzip openjdk-17-jdk python3-pip \
-            autoconf libtool pkg-config zlib1g-dev libncurses5-dev \
-            libncursesw5-dev libtinfo5 cmake libffi-dev libssl-dev
-
-      - name: Install buildozer and Cython
-        run: |
+          sudo apt-get install -y build-essential git zip unzip python3-pip autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo5 cmake libffi-dev libssl-dev
           pip install --upgrade pip setuptools wheel
-          pip install "cython>=3.0.0" buildozer
+          pip install "cython<3.0.0" buildozer
 
-      - name: Decode Keystore from Secret
+      - name: Decode Keystore
         run: |
-          if [ -z "${{ secrets.KEYSTORE_BASE64 }}" ]; then
-            echo "ERROR: KEYSTORE_BASE64 secret is not set!"
-            exit 1
-          fi
-          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > tasbihnoor.keystore
-          ls -la tasbihnoor.keystore
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > tasbih-releser.keystore
 
-      - name: Clean previous build cache
-        run: rm -rf .buildozer bin/
-
-      - name: Pre-fetch freetype source (fix 502 error + dlg submodule)
-        run: |
-          PKGDIR=.buildozer/android/platform/build-arm64-v8a_armeabi-v7a/packages/freetype
-          mkdir -p "$PKGDIR"
-          cd "$PKGDIR"
-
-          echo "Cloning freetype with submodules (includes dlg)..."
-          git clone --recurse-submodules --branch VER-2-14-1 --depth 1 \
-            https://gitlab.freedesktop.org/freetype/freetype.git freetype-2.14.1-src
-
-          if [ ! -d "freetype-2.14.1-src/subprojects/dlg/include" ]; then
-            echo "dlg submodule missing, fetching manually..."
-            git clone --depth 1 https://github.com/nyorain/dlg.git \
-              freetype-2.14.1-src/subprojects/dlg
-          fi
-
-          echo "Packing as tar.gz so buildozer's cached-file check is satisfied..."
-          tar -czf freetype-2.14.1.tar.gz --transform 's,^freetype-2.14.1-src,freetype-2.14.1,' freetype-2.14.1-src
-          touch .mark-freetype-2.14.1.tar.gz
-          ls -la
+      - name: Cache buildozer
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.buildozer
+            .buildozer
+          key: ${{ runner.os }}-buildozer-${{ hashFiles('buildozer.spec') }}
 
       - name: Build APK
+        run: |
+          rm -rf bin/
+          yes | buildozer android release
         env:
           BUILDOZER_WARN_ON_ROOT: 0
           BUILDOZER_ANDROID_KEYSTORE_PASS: ${{ secrets.KEYSTORE_PASS }}
           BUILDOZER_ANDROID_KEYALIAS_PASS: ${{ secrets.KEY_PASS }}
-        run: |
-          set -o pipefail
-          yes | buildozer android release 2>&1 | tee build_log.txt
 
-      - name: Show error summary if build failed
-        if: always()
-        run: |
-          if ! find bin -name "*.apk" | grep -q .; then
-            echo "## Build failed - last 200 lines of log" >> "$GITHUB_STEP_SUMMARY"
-            echo '```' >> "$GITHUB_STEP_SUMMARY"
-            tail -n 200 build_log.txt >> "$GITHUB_STEP_SUMMARY"
-            echo '```' >> "$GITHUB_STEP_SUMMARY"
-          fi
-
-      - name: Patch debuggable flag
-        if: success()
-        run: |
-          mkdir -p bin/final
-          APK=$(find bin -name "*.apk" -not -name "*signed*" | sort -V | tail -1)
-          if [ -z "$APK" ]; then
-            echo "ERROR: No unsigned APK found to patch"
-            ls -la bin/
-            exit 1
-          fi
-          echo "Found unsigned APK: $APK"
-          python3 patch_debuggable.py "$APK" bin/final/patched-unsigned.apk
-
-      - name: Sign APK
-        if: success()
-        env:
-          KEYSTORE_PASS: ${{ secrets.KEYSTORE_PASS }}
-          KEY_PASS: ${{ secrets.KEY_PASS }}
-        run: |
-          BUILD_TOOLS=$(find "$ANDROID_SDK_ROOT/build-tools" -maxdepth 1 -type d | sort -V | tail -1)
-          echo "Using build-tools: $BUILD_TOOLS"
-
-          "$BUILD_TOOLS/zipalign" -v -p 4 \
-            bin/final/patched-unsigned.apk \
-            bin/final/aligned.apk
-
-          "$BUILD_TOOLS/apksigner" sign \
-            --ks tasbihnoor.keystore \
-            --ks-key-alias tasbihnoor \
-            --ks-pass pass:"$KEYSTORE_PASS" \
-            --key-pass pass:"$KEY_PASS" \
-            --out bin/final/tasbih-signed.apk \
-            bin/final/aligned.apk
-
-          "$BUILD_TOOLS/apksigner" verify -v --print-certs bin/final/tasbih-signed.apk
-
-      - name: Verify final APK
-        if: success()
-        run: |
-          if [ ! -f bin/final/tasbih-signed.apk ]; then
-            echo "ERROR: Final signed APK not found"
-            exit 1
-          fi
-          echo "Final APK found: bin/final/tasbih-signed.apk ($(stat -c%s bin/final/tasbih-signed.apk) bytes)"
-          ls -lh bin/final/tasbih-signed.apk
-
-      - name: Upload Signed APK
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: Tasbih-Signed-APK
-          path: bin/final/tasbih-signed.apk
+          path: bin/*release*.apk

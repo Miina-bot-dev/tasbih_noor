@@ -43,8 +43,8 @@ jobs:
             echo "ERROR: KEYSTORE_BASE64 secret is not set!"
             exit 1
           fi
-          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > tasbih-releser.keystore
-          ls -la tasbih-releser.keystore
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > tasbihnoor.keystore
+          ls -la tasbihnoor.keystore
 
       - name: Clean previous build cache
         run: rm -rf .buildozer bin/
@@ -61,6 +61,7 @@ jobs:
             curl -L -o freetype-2.14.1.tar.gz "$url"
             if gzip -t freetype-2.14.1.tar.gz 2>/dev/null; then
               echo "SUCCESS: downloaded from $url"
+              touch .mark-freetype-2.14.1.tar.gz
               break
             else
               echo "FAILED: $url did not work, trying next mirror..."
@@ -87,20 +88,54 @@ jobs:
             echo '```' >> "$GITHUB_STEP_SUMMARY"
           fi
 
-      - name: Verify APK
+      - name: Patch debuggable flag
         if: success()
         run: |
-          APK=$(find bin -name "*release*.apk" | sort -V | tail -1)
+          mkdir -p bin/final
+          APK=$(find bin -name "*.apk" -not -name "*signed*" | sort -V | tail -1)
           if [ -z "$APK" ]; then
-            echo "ERROR: No APK found"
+            echo "ERROR: No unsigned APK found to patch"
             ls -la bin/
             exit 1
           fi
-          echo "APK found: $APK ($(stat -c%s "$APK") bytes)"
-          ls -lh "$APK"
+          echo "Found unsigned APK: $APK"
+          python3 patch_debuggable.py "$APK" bin/final/patched-unsigned.apk
+
+      - name: Sign APK
+        if: success()
+        env:
+          KEYSTORE_PASS: ${{ secrets.KEYSTORE_PASS }}
+          KEY_PASS: ${{ secrets.KEY_PASS }}
+        run: |
+          BUILD_TOOLS=$(find "$ANDROID_SDK_ROOT/build-tools" -maxdepth 1 -type d | sort -V | tail -1)
+          echo "Using build-tools: $BUILD_TOOLS"
+
+          "$BUILD_TOOLS/zipalign" -v -p 4 \
+            bin/final/patched-unsigned.apk \
+            bin/final/aligned.apk
+
+          "$BUILD_TOOLS/apksigner" sign \
+            --ks tasbihnoor.keystore \
+            --ks-key-alias tasbihnoor \
+            --ks-pass pass:"$KEYSTORE_PASS" \
+            --key-pass pass:"$KEY_PASS" \
+            --out bin/final/tasbih-signed.apk \
+            bin/final/aligned.apk
+
+          "$BUILD_TOOLS/apksigner" verify -v --print-certs bin/final/tasbih-signed.apk
+
+      - name: Verify final APK
+        if: success()
+        run: |
+          if [ ! -f bin/final/tasbih-signed.apk ]; then
+            echo "ERROR: Final signed APK not found"
+            exit 1
+          fi
+          echo "Final APK found: bin/final/tasbih-signed.apk ($(stat -c%s bin/final/tasbih-signed.apk) bytes)"
+          ls -lh bin/final/tasbih-signed.apk
 
       - name: Upload Signed APK
         uses: actions/upload-artifact@v4
         with:
           name: Tasbih-Signed-APK
-          path: bin/*release*.apk
+          path: bin/final/tasbih-signed.apk

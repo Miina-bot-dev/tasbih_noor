@@ -32,7 +32,7 @@ android.signing.alias = tasbihnoor
 # Without this, buildozer clones the unstable "develop" branch directly
 # from GitHub, which defaults to Python 3.14 for its internal host-python
 # build tool and breaks (missing 'cgi' module, pip internals mismatch, etc).
-p4a.branch = 2024.01.21
+p4a.branch = v2024.01.21
 
 [buildozer]
 log_level = 2

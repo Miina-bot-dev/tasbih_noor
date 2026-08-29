@@ -6,7 +6,7 @@ source.dir = .
 source.include_exts = py,png,jpg,jpeg,kv,atlas,ttf,json,txt,md
 version = 1.0.1
 version.code = 2
-requirements = python3,kivy==2.3.1,arabic-reshaper,python-bidi,setuptools,wheel,six,pillow
+requirements = python3,kivy==2.2.1,arabic-reshaper,python-bidi,setuptools,wheel,six,pillow
 
 orientation = portrait
 fullscreen = 0
@@ -27,6 +27,12 @@ android.debuggable = 0
 
 android.signing.keystore = tasbih-releser.keystore
 android.signing.alias = tasbihnoor
+
+# Pin python-for-android to the last known-stable tagged release.
+# Without this, buildozer clones the unstable "develop" branch directly
+# from GitHub, which defaults to Python 3.14 for its internal host-python
+# build tool and breaks (missing 'cgi' module, pip internals mismatch, etc).
+p4a.branch = 2024.01.21
 
 [buildozer]
 log_level = 2

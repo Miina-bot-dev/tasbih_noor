@@ -116,7 +116,7 @@ jobs:
 
           "$BUILD_TOOLS/apksigner" sign \
             --ks tasbih-releser.keystore \
-            --ks-key-alias tasbihnoor \
+            --ks-key-alias tasbih-key \
             --ks-pass pass:"$KEYSTORE_PASS" \
             --key-pass pass:"$KEY_PASS" \
             --out bin/final/tasbih-signed.apk \

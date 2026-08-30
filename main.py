@@ -1,4 +1,16 @@
 # -*- coding: utf-8 -*-
+import traceback
+import sys
+import os
+
+def log_exception(exc_type, exc_value, exc_tb):
+    log_dir = '/storage/emulated/0/Android/data/com.tasbihnoor.app/files'
+    os.makedirs(log_dir, exist_ok=True)
+    log_path = os.path.join(log_dir, 'tasbih_error.log')
+    with open(log_path, 'w') as f:
+        traceback.print_exception(exc_type, exc_value, exc_tb, file=f)
+
+sys.excepthook = log_exception
 import os
 import json
 import webbrowser

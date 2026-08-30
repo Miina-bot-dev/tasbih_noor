@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
+import os
+os.environ['KIVY_HOME'] = '/storage/emulated/0/Android/data/com.tasbihnoor.app/files/.kivy'
+
 import traceback
 import sys
-import os
 
 def log_exception(exc_type, exc_value, exc_tb):
     log_dir = '/storage/emulated/0/Android/data/com.tasbihnoor.app/files'
@@ -11,7 +13,7 @@ def log_exception(exc_type, exc_value, exc_tb):
         traceback.print_exception(exc_type, exc_value, exc_tb, file=f)
 
 sys.excepthook = log_exception
-import os
+
 import json
 import webbrowser
 from datetime import datetime
@@ -61,8 +63,6 @@ def fa(text):
         return ""
     return get_display(arabic_reshaper.reshape(str(text)))
 
-def to_fa_num(s):
-    return str(s).translate(FA_DIGITS)
 
 def gregorian_to_jalali(gy, gm, gd):
     g_d_m = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334]
@@ -80,6 +80,9 @@ def gregorian_to_jalali(gy, gm, gd):
     jm = 1 + (days // 31) if days < 186 else 7 + ((days - 186) // 30)
     jd = 1 + (days % 31) if days < 186 else 1 + ((days - 186) % 30)
     return jy, jm, jd
+
+def to_fa_num(s):
+    return str(s).translate(FA_DIGITS)
 
 def load_data():
     if os.path.exists(DATA_FILE):

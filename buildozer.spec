@@ -26,12 +26,8 @@ android.release_artifact = apk
 android.debuggable = 0
 
 android.signing.keystore = tasbih-releser.keystore
-android.signing.alias = tasbihnoor
+android.signing.alias = tasbih-key
 
-# Pin python-for-android to the last known-stable tagged release.
-# Without this, buildozer clones the unstable "develop" branch directly
-# from GitHub, which defaults to Python 3.14 for its internal host-python
-# build tool and breaks (missing 'cgi' module, pip internals mismatch, etc).
 p4a.branch = v2024.01.21
 
 [buildozer]

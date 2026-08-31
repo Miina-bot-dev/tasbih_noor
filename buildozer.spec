@@ -14,9 +14,9 @@ fullscreen = 0
 android.presplash_color = #FFFFFF
 android.permissions = INTERNET,READ_EXTERNAL_STORAGE,WRITE_EXTERNAL_STORAGE,ACCESS_NETWORK_STATE,VIBRATE,CHANGE_NETWORK_STATE
 
-android.api = 33
+android.api = 34
 android.minapi = 21
-android.ndk = 25b
+android.ndk = 27c
 android.ndk_api = 21
 android.archs = arm64-v8a,armeabi-v7a
 

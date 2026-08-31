@@ -1,3 +1,9 @@
+import sys, traceback
+def catch_error(t, v, tb):
+    with open('/sdcard/Download/tasbih_error.txt', 'w') as f:
+        traceback.print_exception(t, v, tb, file=f)
+sys.excepthook = catch_error
+
 # -*- coding: utf-8 -*-
 import os
 os.environ['KIVY_HOME'] = '/storage/emulated/0/Android/data/com.tasbihnoor.app/files/.kivy'

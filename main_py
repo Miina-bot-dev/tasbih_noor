@@ -1,33 +1,21 @@
 import sys, traceback
-
 def catch_error(t, v, tb):
-    import os
-    log_dir = os.path.join(os.environ.get("ANDROID_PRIVATE", os.path.expanduser("~")), "files")
-    os.makedirs(log_dir, exist_ok=True)
-    with open(os.path.join(log_dir, "tasbih_error.txt"), "w") as f:
+    with open('/sdcard/Download/tasbih_error.txt', 'w') as f:
         traceback.print_exception(t, v, tb, file=f)
-
 sys.excepthook = catch_error
 
 # -*- coding: utf-8 -*-
 import os
-
-# FIX: استفاده از مسیر داخلی اندروید
-if "ANDROID_PRIVATE" in os.environ:
-    os.environ["KIVY_HOME"] = os.path.join(os.environ["ANDROID_PRIVATE"], ".kivy")
-    BASE_DIR = os.environ["ANDROID_PRIVATE"]
-else:
-    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+os.environ['KIVY_HOME'] = '/storage/emulated/0/Android/data/com.tasbihnoor.app/files/.kivy'
 
 import traceback
 import sys
 
 def log_exception(exc_type, exc_value, exc_tb):
-    import os
-    log_dir = os.path.join(os.environ.get("ANDROID_PRIVATE", os.path.expanduser("~")), "files")
+    log_dir = '/storage/emulated/0/Android/data/com.tasbihnoor.app/files'
     os.makedirs(log_dir, exist_ok=True)
-    log_path = os.path.join(log_dir, "tasbih_error.log")
-    with open(log_path, "w") as f:
+    log_path = os.path.join(log_dir, 'tasbih_error.log')
+    with open(log_path, 'w') as f:
         traceback.print_exception(exc_type, exc_value, exc_tb, file=f)
 
 sys.excepthook = log_exception
@@ -56,10 +44,11 @@ from kivy.uix.textinput import TextInput
 from kivy.uix.progressbar import ProgressBar
 
 # --------------------------
-# تنظیمات پایه
+# طھظ†ط¸غŒظ…ط§طھ ظ¾ط§غŒظ‡
 # --------------------------
 Window.clearcolor = (0.1, 0.04, 0.18, 1)
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_FILE = os.path.join(BASE_DIR, "zekr_data.json")
 FONT_FILE = os.path.join(BASE_DIR, "Vazirmatn-Regular.ttf")
 BANNER_FILE = os.path.join(BASE_DIR, "main_banner.png")
@@ -73,7 +62,7 @@ if os.path.exists(FONT_FILE):
 else:
     FONT_NAME = None
 
-FA_DIGITS = str.maketrans("0123456789", "۰۱۲۳۴۵۶۷۸۹")
+FA_DIGITS = str.maketrans("0123456789", "غ°غ±غ²غ³غ´غµغ¶غ·غ¸غ¹")
 
 def fa(text):
     if text is None:
@@ -115,20 +104,20 @@ def save_data(data):
         json.dump(data, f, ensure_ascii=False, indent=2)
 
 # --------------------------
-# اذکار آماده
+# ط§ط°ع©ط§ط± ط¢ظ…ط§ط¯ظ‡
 # --------------------------
 WEEKLY_ZEKR = {
-    5: "یا رَبَّ الْعالَمین",
-    6: "یا ذاالْجَلالِ وَ الْاِکْرام",
-    0: "یا قاضِیَ الْحاجات",
-    1: "یا اَرْحَمَ الرّاحِمین",
-    2: "یا حَیُّ یا قَیّوُم",
-    3: "لا اِلهَ اِلّا اللهُ الْمَلِکُ الْحَقُّ الْمُبین",
-    4: "اَللّهُمَّ صَلِّ عَلی مُحَمَّد وَ آلِ مُحَمَّد",
+    5: "غŒط§ ط±ظژط¨ظژظ‘ ط§ظ„ظ’ط¹ط§ظ„ظژظ…غŒظ†",
+    6: "غŒط§ ط°ط§ط§ظ„ظ’ط¬ظژظ„ط§ظ„ظگ ظˆظژ ط§ظ„ظ’ط§ظگع©ظ’ط±ط§ظ…",
+    0: "غŒط§ ظ‚ط§ط¶ظگغŒظژ ط§ظ„ظ’ط­ط§ط¬ط§طھ",
+    1: "غŒط§ ط§ظژط±ظ’ط­ظژظ…ظژ ط§ظ„ط±ظ‘ط§ط­ظگظ…غŒظ†",
+    2: "غŒط§ ط­ظژغŒظڈظ‘ غŒط§ ظ‚ظژغŒظ‘ظˆظڈظ…",
+    3: "ظ„ط§ ط§ظگظ„ظ‡ظژ ط§ظگظ„ظ‘ط§ ط§ظ„ظ„ظ‡ظڈ ط§ظ„ظ’ظ…ظژظ„ظگع©ظڈ ط§ظ„ظ’ط­ظژظ‚ظڈظ‘ ط§ظ„ظ’ظ…ظڈط¨غŒظ†",
+    4: "ط§ظژظ„ظ„ظ‘ظ‡ظڈظ…ظژظ‘ طµظژظ„ظگظ‘ ط¹ظژظ„غŒ ظ…ظڈط­ظژظ…ظژظ‘ط¯ ظˆظژ ط¢ظ„ظگ ظ…ظڈط­ظژظ…ظژظ‘ط¯",
 }
 
 # --------------------------
-# آیکون‌های سفارشی (Canvas)
+# ط¢غŒع©ظˆظ†â€Œظ‡ط§غŒ ط³ظپط§ط±ط´غŒ (Canvas)
 # --------------------------
 class IconBase(FloatLayout):
     def __init__(self, **kwargs):
@@ -137,15 +126,15 @@ class IconBase(FloatLayout):
         self.size = (dp(36), dp(36))
 
 class StarIcon(IconBase):
-    """ستاره زرد"""
+    """ط³طھط§ط±ظ‡ ط²ط±ط¯"""
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         with self.canvas:
             Color(0.95, 0.75, 0.15, 1)
             self.circle = Ellipse(pos=self.pos, size=self.size)
         self.bind(pos=self._upd, size=self._upd)
-        lbl = Label(text="★", font_size="22sp", color=(0.15, 0.1, 0.05, 1),
-                    bold=True, pos_hint={"center_x": 0.5, "center_y": 0.5})
+        lbl = Label(text="âک…", font_size="22sp", color=(0.15, 0.1, 0.05, 1),
+                    bold=True, pos_hint={'center_x': 0.5, 'center_y': 0.5})
         self.add_widget(lbl)
 
     def _upd(self, *args):
@@ -153,7 +142,7 @@ class StarIcon(IconBase):
         self.circle.size = self.size
 
 class CoinIcon(IconBase):
-    """سکه طلایی"""
+    """ط³ع©ظ‡ ط·ظ„ط§غŒغŒ"""
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         with self.canvas:
@@ -163,7 +152,7 @@ class CoinIcon(IconBase):
             self.ring = Line(circle=(self.center_x, self.center_y, dp(14)), width=1.5)
         self.bind(pos=self._upd, size=self._upd)
         lbl = Label(text="$", font_size="20sp", color=(0.4, 0.3, 0.05, 1),
-                    bold=True, pos_hint={"center_x": 0.5, "center_y": 0.5})
+                    bold=True, pos_hint={'center_x': 0.5, 'center_y': 0.5})
         self.add_widget(lbl)
 
     def _upd(self, *args):
@@ -172,7 +161,7 @@ class CoinIcon(IconBase):
         self.ring.circle = (self.center_x, self.center_y, dp(14))
 
 class LockIcon(IconBase):
-    """قفل آبی"""
+    """ظ‚ظپظ„ ط¢ط¨غŒ"""
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         with self.canvas:
@@ -191,7 +180,7 @@ class LockIcon(IconBase):
         self.hole.pos = (self.x+14, self.y+12)
 
 class BirdIcon(IconBase):
-    """پرنده صورتی"""
+    """ظ¾ط±ظ†ط¯ظ‡ طµظˆط±طھغŒ"""
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         with self.canvas:
@@ -208,14 +197,14 @@ class BirdIcon(IconBase):
         self.wing2.points = [self.x+8, self.y+16, self.x+16, self.y+26, self.x+28, self.y+16]
 
 ZEKR_FOLDERS = [
-    ("صلوات", StarIcon, ["اَللّهُمَّ صَلِّ عَلی مُحَمَّد وَ آلِ مُحَمَّد", "اَللّهُمَّ صَلِّ عَلی مُحَمَّد", "صَلَّی اللهُ عَلَیهِ وَ آلِهِ"]),
-    ("رزق و روزی", CoinIcon, ["یا رزاق", "یا غنی", "یا واسع", "یا فتاح", "استغفرالله"]),
-    ("گشایش مشکلات", LockIcon, ["یا فتاح", "یا کاشف الکرب", "یا مجیب", "یا قاضی الحاجات"]),
-    ("آرامش قلب", BirdIcon, ["یا سلام", "یا لطیف", "یا صبور", "یا نور", "یا رؤوف"]),
+    ("طµظ„ظˆط§طھ", StarIcon, ["ط§ظژظ„ظ„ظ‘ظ‡ظڈظ…ظژظ‘ طµظژظ„ظگظ‘ ط¹ظژظ„غŒ ظ…ظڈط­ظژظ…ظژظ‘ط¯ ظˆظژ ط¢ظ„ظگ ظ…ظڈط­ظژظ…ظژظ‘ط¯", "ط§ظژظ„ظ„ظ‘ظ‡ظڈظ…ظژظ‘ طµظژظ„ظگظ‘ ط¹ظژظ„غŒ ظ…ظڈط­ظژظ…ظژظ‘ط¯", "طµظژظ„ظژظ‘غŒ ط§ظ„ظ„ظ‡ظڈ ط¹ظژظ„ظژغŒظ‡ظگ ظˆظژ ط¢ظ„ظگظ‡ظگ"]),
+    ("ط±ط²ظ‚ ظˆ ط±ظˆط²غŒ", CoinIcon, ["غŒط§ ط±ط²ط§ظ‚", "غŒط§ ط؛ظ†غŒ", "غŒط§ ظˆط§ط³ط¹", "غŒط§ ظپطھط§ط­", "ط§ط³طھط؛ظپط±ط§ظ„ظ„ظ‡"]),
+    ("ع¯ط´ط§غŒط´ ظ…ط´ع©ظ„ط§طھ", LockIcon, ["غŒط§ ظپطھط§ط­", "غŒط§ ع©ط§ط´ظپ ط§ظ„ع©ط±ط¨", "غŒط§ ظ…ط¬غŒط¨", "غŒط§ ظ‚ط§ط¶غŒ ط§ظ„ط­ط§ط¬ط§طھ"]),
+    ("ط¢ط±ط§ظ…ط´ ظ‚ظ„ط¨", BirdIcon, ["غŒط§ ط³ظ„ط§ظ…", "غŒط§ ظ„ط·غŒظپ", "غŒط§ طµط¨ظˆط±", "غŒط§ ظ†ظˆط±", "غŒط§ ط±ط¤ظˆظپ"]),
 ]
 
 # --------------------------
-# ویجت‌های سفارشی
+# ظˆغŒط¬طھâ€Œظ‡ط§غŒ ط³ظپط§ط±ط´غŒ
 # --------------------------
 class GlassCard(BoxLayout):
     def __init__(self, radius=20, **kwargs):
@@ -263,8 +252,8 @@ class StyledBtn(Button):
 
 class FLabel(Label):
     def __init__(self, text="", size="16sp", clr=(1, 1, 1, 1), bold=False, **kwargs):
-        halign = kwargs.pop("halign", "center")
-        valign = kwargs.pop("valign", "middle")
+        halign = kwargs.pop('halign', 'center')
+        valign = kwargs.pop('valign', 'middle')
         super().__init__(**kwargs)
         self.font_name = FONT_NAME
         self.text = fa(text)
@@ -282,7 +271,7 @@ class FLabel(Label):
         self.text = fa(t)
 
 # --------------------------
-# اپلیکیشن اصلی
+# ط§ظ¾ظ„غŒع©غŒط´ظ† ط§طµظ„غŒ
 # --------------------------
 class TasbihApp(App):
     def build(self):
@@ -297,7 +286,7 @@ class TasbihApp(App):
         if os.path.exists(BANNER_FILE):
             banner = Image(source=BANNER_FILE, allow_stretch=True, keep_ratio=False,
                           color=(1, 1, 1, 0.8))
-            banner.pos_hint = {"x": 0, "y": 0}
+            banner.pos_hint = {'x': 0, 'y': 0}
             banner.size_hint = (1, 1)
             root.add_widget(banner)
 
@@ -306,10 +295,10 @@ class TasbihApp(App):
                        padding=[dp(16), dp(40), dp(16), dp(20)], size_hint_y=None)
         lay.bind(minimum_height=lay.setter("height"))
 
-        # ==== هدر: ساعت/تاریخ چپ، ذکر روز راست ====
+        # ==== ظ‡ط¯ط±: ط³ط§ط¹طھ/طھط§ط±غŒط® ع†ظ¾طŒ ط°ع©ط± ط±ظˆط² ط±ط§ط³طھ ====
         header = BoxLayout(orientation="horizontal", size_hint_y=None, height=dp(50))
 
-        # چپ: ساعت + تاریخ
+        # ع†ظ¾: ط³ط§ط¹طھ + طھط§ط±غŒط®
         left_box = BoxLayout(orientation="vertical", size_hint_x=0.5)
         self.lbl_time = FLabel(text="00:00:00", size="20sp", clr=(1, 0.83, 0.31, 1), bold=True, halign="left")
         self.lbl_date = FLabel(text="", size="13sp", clr=(0.85, 0.85, 0.85, 0.8), halign="left")
@@ -317,9 +306,9 @@ class TasbihApp(App):
         left_box.add_widget(self.lbl_date)
         header.add_widget(left_box)
 
-        # راست: ذکر روز
+        # ط±ط§ط³طھ: ط°ع©ط± ط±ظˆط²
         right_box = BoxLayout(orientation="vertical", size_hint_x=0.5)
-        lbl_zekr_title = FLabel(text="ذکر امروز", size="10sp", clr=(1, 0.83, 0.31, 0.8), halign="right")
+        lbl_zekr_title = FLabel(text="ط°ع©ط± ط§ظ…ط±ظˆط²", size="10sp", clr=(1, 0.83, 0.31, 0.8), halign="right")
         self.lbl_week = FLabel(text="", size="14sp", clr=(1, 0.83, 0.31, 1), bold=True, halign="right")
         right_box.add_widget(lbl_zekr_title)
         right_box.add_widget(self.lbl_week)
@@ -327,39 +316,39 @@ class TasbihApp(App):
 
         lay.add_widget(header)
 
-        # ==== فاصله ۵۰dp ====
+        # ==== ظپط§طµظ„ظ‡ غµغ°dp ====
         lay.add_widget(Label(text="", size_hint_y=None, height=dp(50)))
 
-        # ==== ذکر انتخاب شده ====
-        self.lbl_active = FLabel(text="ذکر خود را انتخاب کنید", size="22sp", clr=(0.29, 0.87, 0.50, 1), bold=True)
+        # ==== ط°ع©ط± ط§ظ†طھط®ط§ط¨ ط´ط¯ظ‡ ====
+        self.lbl_active = FLabel(text="ط°ع©ط± ط®ظˆط¯ ط±ط§ ط§ظ†طھط®ط§ط¨ ع©ظ†غŒط¯", size="22sp", clr=(0.29, 0.87, 0.50, 1), bold=True)
         lay.add_widget(self.lbl_active)
 
-        # ==== فاصله ۲۰dp ====
+        # ==== ظپط§طµظ„ظ‡ غ²غ°dp ====
         lay.add_widget(Label(text="", size_hint_y=None, height=dp(20)))
 
-        # ==== کارت شمارنده ====
+        # ==== ع©ط§ط±طھ ط´ظ…ط§ط±ظ†ط¯ظ‡ ====
         card = GlassCard(radius=20)
-        self.lbl_count = FLabel(text="۰", size="72sp", clr=(1, 1, 1, 1), bold=True)
+        self.lbl_count = FLabel(text="غ°", size="72sp", clr=(1, 1, 1, 1), bold=True)
         self.prog = ProgressBar(max=100, size_hint_y=None, height=dp(6))
-        self.lbl_info = FLabel(text="هدف: ۱۰۰", size="12sp", clr=(0.7, 0.8, 1, 0.6))
+        self.lbl_info = FLabel(text="ظ‡ط¯ظپ: غ±غ°غ°", size="12sp", clr=(0.7, 0.8, 1, 0.6))
 
         card.add_widget(self.lbl_count)
         card.add_widget(self.prog)
         card.add_widget(self.lbl_info)
 
         g1 = GridLayout(cols=2, spacing=dp(8), size_hint_y=None, height=dp(50))
-        b1 = StyledBtn(text="+۱", bg=(0.66, 0.33, 0.97, 0.85))
+        b1 = StyledBtn(text="+غ±", bg=(0.66, 0.33, 0.97, 0.85))
         b1.bind(on_press=self.add_one)
-        b2 = StyledBtn(text="-۱", bg=(0.39, 0.31, 0.47, 0.7))
+        b2 = StyledBtn(text="-غ±", bg=(0.39, 0.31, 0.47, 0.7))
         b2.bind(on_press=self.sub_one)
         g1.add_widget(b1)
         g1.add_widget(b2)
         card.add_widget(g1)
 
         g2 = GridLayout(cols=2, spacing=dp(8), size_hint_y=None, height=dp(50))
-        b3 = StyledBtn(text="ریست", bg=(0.86, 0.15, 0.15, 0.85))
+        b3 = StyledBtn(text="ط±غŒط³طھ", bg=(0.86, 0.15, 0.15, 0.85))
         b3.bind(on_press=self.reset)
-        b4 = StyledBtn(text="هدف", bg=(0.13, 0.64, 0.29, 0.85))
+        b4 = StyledBtn(text="ظ‡ط¯ظپ", bg=(0.13, 0.64, 0.29, 0.85))
         b4.bind(on_press=self.set_target)
         g2.add_widget(b3)
         g2.add_widget(b4)
@@ -367,21 +356,21 @@ class TasbihApp(App):
 
         lay.add_widget(card)
 
-        # ==== فاصله ۱۵dp ====
+        # ==== ظپط§طµظ„ظ‡ غ±غµdp ====
         lay.add_widget(Label(text="", size_hint_y=None, height=dp(15)))
 
-        # ==== دکمه بانک اذکار ====
-        bb = StyledBtn(text="بانک اذکار مشکل‌گشا", bg=(0.49, 0.22, 0.93, 0.9))
+        # ==== ط¯ع©ظ…ظ‡ ط¨ط§ظ†ع© ط§ط°ع©ط§ط± ====
+        bb = StyledBtn(text="ط¨ط§ظ†ع© ط§ط°ع©ط§ط± ظ…ط´ع©ظ„â€Œع¯ط´ط§", bg=(0.49, 0.22, 0.93, 0.9))
         bb.height = dp(56)
         bb.bind(on_press=self.open_bank)
         lay.add_widget(bb)
 
-        # ==== بنر حمایت ====
+        # ==== ط¨ظ†ط± ط­ظ…ط§غŒطھ ====
         support_card = GlassCard(radius=14)
         support_card.padding = dp(12)
         support_card.spacing = dp(6)
-        lbl_support = FLabel(text="لطفاً از ما حمایت کنید", size="13sp", clr=(1, 1, 1, 1))
-        btn_support = StyledBtn(text="امتیاز دادن / عضویت در کانال", bg=(0.2, 0.15, 0.3, 0.6))
+        lbl_support = FLabel(text="ظ„ط·ظپط§ظ‹ ط§ط² ظ…ط§ ط­ظ…ط§غŒطھ ع©ظ†غŒط¯", size="13sp", clr=(1, 1, 1, 1))
+        btn_support = StyledBtn(text="ط§ظ…طھغŒط§ط² ط¯ط§ط¯ظ† / ط¹ط¶ظˆغŒطھ ط¯ط± ع©ط§ظ†ط§ظ„", bg=(0.2, 0.15, 0.3, 0.6))
         btn_support.bind(on_press=self.open_support)
         support_card.add_widget(lbl_support)
         support_card.add_widget(btn_support)
@@ -404,13 +393,13 @@ class TasbihApp(App):
         self.lbl_time.set_text(to_fa_num(now.strftime("%H:%M:%S")))
         self.lbl_date.set_text(to_fa_num(f"{jy}/{jm:02d}/{jd:02d}"))
         wd = now.weekday()
-        self.lbl_week.set_text(WEEKLY_ZEKR.get(wd, "ذکر روز"))
+        self.lbl_week.set_text(WEEKLY_ZEKR.get(wd, "ط°ع©ط± ط±ظˆط²"))
 
     def refresh(self):
         c = self.data.get("count", 0)
         t = self.data.get("daily_target", 100)
         self.lbl_count.set_text(to_fa_num(c))
-        self.lbl_info.set_text(f"هدف: {to_fa_num(t)}")
+        self.lbl_info.set_text(f"ظ‡ط¯ظپ: {to_fa_num(t)}")
         self.prog.max = t
         self.prog.value = min(c, t)
 
@@ -433,8 +422,8 @@ class TasbihApp(App):
     def set_target(self, *a):
         box = BoxLayout(orientation="vertical", spacing=dp(12), padding=dp(16))
         inp = TextInput(text=str(self.data["daily_target"]), multiline=False, input_filter="int", font_name=FONT_NAME, font_size="18sp")
-        btn = StyledBtn(text="تایید", bg=(0.1, 0.6, 0.4, 1))
-        pop = Popup(title=fa("تنظیم هدف"), content=box, size_hint=(0.8, 0.35))
+        btn = StyledBtn(text="طھط§غŒغŒط¯", bg=(0.1, 0.6, 0.4, 1))
+        pop = Popup(title=fa("طھظ†ط¸غŒظ… ظ‡ط¯ظپ"), content=box, size_hint=(0.8, 0.35))
         box.add_widget(inp)
         box.add_widget(btn)
         btn.bind(on_press=lambda x: self._save_target(inp.text, pop))
@@ -453,15 +442,15 @@ class TasbihApp(App):
             pass
 
     # --------------------------
-    # بانک اذکار
+    # ط¨ط§ظ†ع© ط§ط°ع©ط§ط±
     # --------------------------
     def open_bank(self, *a):
         box = BoxLayout(orientation="vertical", padding=dp(14), spacing=dp(12))
 
-        # عنوان
+        # ط¹ظ†ظˆط§ظ†
         title_box = BoxLayout(orientation="horizontal", size_hint_y=None, height=dp(40), spacing=dp(6))
         title_icon = StarIcon()
-        title_text = FLabel(text="بانک اذکار", size="20sp", clr=(1, 0.83, 0.31, 1), bold=True, halign="right")
+        title_text = FLabel(text="ط¨ط§ظ†ع© ط§ط°ع©ط§ط±", size="20sp", clr=(1, 0.83, 0.31, 1), bold=True, halign="right")
         title_box.add_widget(title_icon)
         title_box.add_widget(title_text)
         box.add_widget(title_box)
@@ -479,7 +468,7 @@ class TasbihApp(App):
         custom = self.data.get("custom_zekrs", [])
         custom_buttons = []
         if custom:
-            inner.add_widget(FLabel(text="──── ذکرهای شما ────", size="14sp", clr=(0.6, 0.7, 0.9, 0.7)))
+            inner.add_widget(FLabel(text="â”€â”€â”€â”€ ط°ع©ط±ظ‡ط§غŒ ط´ظ…ط§ â”€â”€â”€â”€", size="14sp", clr=(0.6, 0.7, 0.9, 0.7)))
             for z in custom:
                 btn = StyledBtn(text=z, bg=(0.15, 0.3, 0.25, 0.9))
                 custom_buttons.append((btn, z))
@@ -488,12 +477,12 @@ class TasbihApp(App):
         sc.add_widget(inner)
         box.add_widget(sc)
 
-        cls = StyledBtn(text="بستن", bg=(0.35, 0.3, 0.4, 0.9))
+        cls = StyledBtn(text="ط¨ط³طھظ†", bg=(0.35, 0.3, 0.4, 0.9))
         pop = Popup(title="", content=box, size_hint=(0.92, 0.78), separator_height=0)
         cls.bind(on_press=pop.dismiss)
         box.add_widget(cls)
 
-        # ==== کلیک روی پوشه → نمایش اذکار داخلش ====
+        # ==== ع©ظ„غŒع© ط±ظˆغŒ ظ¾ظˆط´ظ‡ â†’ ظ†ظ…ط§غŒط´ ط§ط°ع©ط§ط± ط¯ط§ط®ظ„ط´ ====
         for card, name, zekrs in folder_buttons:
             card.trigger.bind(on_press=lambda x, n=name, z=zekrs, p=pop: self.show_zekrs(n, z, p))
         for btn, z in custom_buttons:
@@ -518,7 +507,7 @@ class TasbihApp(App):
             bg.line.rounded_rectangle = (bg.x, bg.y, bg.width, bg.height, 18)
         bg.bind(pos=upd_bg, size=upd_bg)
 
-        # آیکون رنگی
+        # ط¢غŒع©ظˆظ† ط±ظ†ع¯غŒ
         icon = icon_cls()
         name_lbl = FLabel(text=name, size="16sp", clr=(0.95, 0.95, 0.95, 1), bold=True, halign="right")
         arrow_lbl = Label(text=">", font_size="24sp", color=(0.7, 0.7, 0.8, 0.6),
@@ -529,7 +518,7 @@ class TasbihApp(App):
         bg.add_widget(arrow_lbl)
         root.add_widget(bg)
 
-        # دکمه شفاف روی کل کارت
+        # ط¯ع©ظ…ظ‡ ط´ظپط§ظپ ط±ظˆغŒ ع©ظ„ ع©ط§ط±طھ
         btn = Button(background_normal="", background_color=(0, 0, 0, 0),
                      pos_hint={"x": 0, "y": 0}, size_hint=(1, 1))
         root.add_widget(btn)
@@ -551,12 +540,12 @@ class TasbihApp(App):
 
         sc.add_widget(inner)
         box.add_widget(sc)
-        back = StyledBtn(text="برگشت", bg=(0.35, 0.3, 0.4, 0.9))
+        back = StyledBtn(text="ط¨ط±ع¯ط´طھ", bg=(0.35, 0.3, 0.4, 0.9))
         pop = Popup(title=fa(folder_name), content=box, size_hint=(0.88, 0.72))
         back.bind(on_press=pop.dismiss)
         box.add_widget(back)
 
-        # ==== کلیک روی ذکر → نمایش روی صفحه اصلی + بستن همه پنجره‌ها ====
+        # ==== ع©ظ„غŒع© ط±ظˆغŒ ط°ع©ط± â†’ ظ†ظ…ط§غŒط´ ط±ظˆغŒ طµظپط­ظ‡ ط§طµظ„غŒ + ط¨ط³طھظ† ظ‡ظ…ظ‡ ظ¾ظ†ط¬ط±ظ‡â€Œظ‡ط§ ====
         for btn, z in zekr_buttons:
             btn.bind(on_press=lambda x, zz=z, p=pop, pp=parent_popup: self.pick_zekr(zz, p, pp))
 

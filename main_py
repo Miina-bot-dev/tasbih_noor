@@ -1,21 +1,33 @@
 import sys, traceback
+
 def catch_error(t, v, tb):
-    with open('/sdcard/Download/tasbih_error.txt', 'w') as f:
+    import os
+    log_dir = os.path.join(os.environ.get("ANDROID_PRIVATE", os.path.expanduser("~")), "files")
+    os.makedirs(log_dir, exist_ok=True)
+    with open(os.path.join(log_dir, "tasbih_error.txt"), "w") as f:
         traceback.print_exception(t, v, tb, file=f)
+
 sys.excepthook = catch_error
 
 # -*- coding: utf-8 -*-
 import os
-os.environ['KIVY_HOME'] = '/storage/emulated/0/Android/data/com.tasbihnoor.app/files/.kivy'
+
+# FIX: استفاده از مسیر داخلی اندروید
+if "ANDROID_PRIVATE" in os.environ:
+    os.environ["KIVY_HOME"] = os.path.join(os.environ["ANDROID_PRIVATE"], ".kivy")
+    BASE_DIR = os.environ["ANDROID_PRIVATE"]
+else:
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 import traceback
 import sys
 
 def log_exception(exc_type, exc_value, exc_tb):
-    log_dir = '/storage/emulated/0/Android/data/com.tasbihnoor.app/files'
+    import os
+    log_dir = os.path.join(os.environ.get("ANDROID_PRIVATE", os.path.expanduser("~")), "files")
     os.makedirs(log_dir, exist_ok=True)
-    log_path = os.path.join(log_dir, 'tasbih_error.log')
-    with open(log_path, 'w') as f:
+    log_path = os.path.join(log_dir, "tasbih_error.log")
+    with open(log_path, "w") as f:
         traceback.print_exception(exc_type, exc_value, exc_tb, file=f)
 
 sys.excepthook = log_exception
@@ -48,7 +60,6 @@ from kivy.uix.progressbar import ProgressBar
 # --------------------------
 Window.clearcolor = (0.1, 0.04, 0.18, 1)
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_FILE = os.path.join(BASE_DIR, "zekr_data.json")
 FONT_FILE = os.path.join(BASE_DIR, "Vazirmatn-Regular.ttf")
 BANNER_FILE = os.path.join(BASE_DIR, "main_banner.png")
@@ -134,7 +145,7 @@ class StarIcon(IconBase):
             self.circle = Ellipse(pos=self.pos, size=self.size)
         self.bind(pos=self._upd, size=self._upd)
         lbl = Label(text="★", font_size="22sp", color=(0.15, 0.1, 0.05, 1),
-                    bold=True, pos_hint={'center_x': 0.5, 'center_y': 0.5})
+                    bold=True, pos_hint={"center_x": 0.5, "center_y": 0.5})
         self.add_widget(lbl)
 
     def _upd(self, *args):
@@ -152,7 +163,7 @@ class CoinIcon(IconBase):
             self.ring = Line(circle=(self.center_x, self.center_y, dp(14)), width=1.5)
         self.bind(pos=self._upd, size=self._upd)
         lbl = Label(text="$", font_size="20sp", color=(0.4, 0.3, 0.05, 1),
-                    bold=True, pos_hint={'center_x': 0.5, 'center_y': 0.5})
+                    bold=True, pos_hint={"center_x": 0.5, "center_y": 0.5})
         self.add_widget(lbl)
 
     def _upd(self, *args):
@@ -252,8 +263,8 @@ class StyledBtn(Button):
 
 class FLabel(Label):
     def __init__(self, text="", size="16sp", clr=(1, 1, 1, 1), bold=False, **kwargs):
-        halign = kwargs.pop('halign', 'center')
-        valign = kwargs.pop('valign', 'middle')
+        halign = kwargs.pop("halign", "center")
+        valign = kwargs.pop("valign", "middle")
         super().__init__(**kwargs)
         self.font_name = FONT_NAME
         self.text = fa(text)
@@ -286,7 +297,7 @@ class TasbihApp(App):
         if os.path.exists(BANNER_FILE):
             banner = Image(source=BANNER_FILE, allow_stretch=True, keep_ratio=False,
                           color=(1, 1, 1, 0.8))
-            banner.pos_hint = {'x': 0, 'y': 0}
+            banner.pos_hint = {"x": 0, "y": 0}
             banner.size_hint = (1, 1)
             root.add_widget(banner)
 

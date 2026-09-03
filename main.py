@@ -1,24 +1,46 @@
 # -*- coding: utf-8 -*-
 import os
-os.environ['KIVY_HOME'] = '/storage/emulated/0/Android/data/com.tasbihnoor.app/files/.kivy'
-
-import traceback
 import sys
+import traceback
 
+from kivy.utils import platform
+
+# ============================================================
+# ۱. مسیر ذخیره‌سازی امن (بدون نیاز به permission)
+# ============================================================
+if platform == 'android':
+    from android.storage import app_storage_path
+    APP_DIR = app_storage_path()  # /data/data/.../files
+else:
+    APP_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# KIVY_HOME رو روی مسیر قابل نوشتن داخلی بذار
+os.environ['KIVY_HOME'] = os.path.join(APP_DIR, '.kivy')
+
+# لاگ خطا رو هم همینجا بنویس
 def log_exception(exc_type, exc_value, exc_tb):
-    log_dir = '/storage/emulated/0/Android/data/com.tasbihnoor.app/files'
-    os.makedirs(log_dir, exist_ok=True)
-    log_path = os.path.join(log_dir, 'tasbih_error.log')
-    with open(log_path, 'w') as f:
-        traceback.print_exception(exc_type, exc_value, exc_tb, file=f)
+    try:
+        log_path = os.path.join(APP_DIR, 'tasbih_error.log')
+        with open(log_path, 'w', encoding='utf-8') as f:
+            traceback.print_exception(exc_type, exc_value, exc_tb, file=f)
+    except:
+        pass
 
 sys.excepthook = log_exception
+
+# ============================================================
+# ۲. کتابخونه‌ها با fallback (اگه نصب نباشن کرش نکنه)
+# ============================================================
+try:
+    import arabic_reshaper
+    from bidi.algorithm import get_display
+    HAS_BIDI = True
+except Exception:
+    HAS_BIDI = False
 
 import json
 import webbrowser
 from datetime import datetime
-import arabic_reshaper
-from bidi.algorithm import get_display
 
 from kivy.app import App
 from kivy.clock import Clock
@@ -42,7 +64,7 @@ from kivy.uix.progressbar import ProgressBar
 Window.clearcolor = (0.1, 0.04, 0.18, 1)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DATA_FILE = os.path.join(BASE_DIR, "zekr_data.json")
+DATA_FILE = os.path.join(APP_DIR, "zekr_data.json")  # ← عوض شد
 FONT_FILE = os.path.join(BASE_DIR, "Vazirmatn-Regular.ttf")
 
 if os.path.exists(FONT_FILE):
@@ -59,8 +81,13 @@ FA_DIGITS = str.maketrans("0123456789", "۰۱۲۳۴۵۶۷۸۹")
 def fa(text):
     if text is None:
         return ""
-    return get_display(arabic_reshaper.reshape(str(text)))
-
+    text = str(text)
+    if HAS_BIDI:
+        try:
+            return get_display(arabic_reshaper.reshape(text))
+        except:
+            return text
+    return text
 
 def gregorian_to_jalali(gy, gm, gd):
     g_d_m = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334]
@@ -92,8 +119,12 @@ def load_data():
     return {"count": 0, "daily_target": 100, "paid": False, "custom_zekrs": []}
 
 def save_data(data):
-    with open(DATA_FILE, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
+    try:
+        with open(DATA_FILE, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        # اگه نتونست بنویسه لاگ کن ولی کرش نکن
+        print(f"SAVE ERROR: {e}")
 
 # --------------------------
 # اذکار آماده

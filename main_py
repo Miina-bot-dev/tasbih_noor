@@ -1,9 +1,3 @@
-import sys, traceback
-def catch_error(t, v, tb):
-    with open('/sdcard/Download/tasbih_error.txt', 'w') as f:
-        traceback.print_exception(t, v, tb, file=f)
-sys.excepthook = catch_error
-
 # -*- coding: utf-8 -*-
 import os
 os.environ['KIVY_HOME'] = '/storage/emulated/0/Android/data/com.tasbihnoor.app/files/.kivy'
@@ -32,7 +26,6 @@ from kivy.core.text import LabelBase
 from kivy.core.window import Window
 from kivy.graphics import Color, RoundedRectangle, Line, Ellipse, Rectangle
 from kivy.metrics import dp
-from kivy.uix.image import Image
 from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
@@ -51,7 +44,6 @@ Window.clearcolor = (0.1, 0.04, 0.18, 1)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_FILE = os.path.join(BASE_DIR, "zekr_data.json")
 FONT_FILE = os.path.join(BASE_DIR, "Vazirmatn-Regular.ttf")
-BANNER_FILE = os.path.join(BASE_DIR, "main_banner.png")
 
 if os.path.exists(FONT_FILE):
     try:
@@ -283,13 +275,6 @@ class TasbihApp(App):
             self.bg_rect = Rectangle(pos=root.pos, size=root.size)
         root.bind(pos=self._update_bg, size=self._update_bg)
 
-        if os.path.exists(BANNER_FILE):
-            banner = Image(source=BANNER_FILE, allow_stretch=True, keep_ratio=False,
-                          color=(1, 1, 1, 0.8))
-            banner.pos_hint = {'x': 0, 'y': 0}
-            banner.size_hint = (1, 1)
-            root.add_widget(banner)
-
         scroll = ScrollView(do_scroll_x=False)
         lay = BoxLayout(orientation="vertical", spacing=dp(10),
                        padding=[dp(16), dp(40), dp(16), dp(20)], size_hint_y=None)
@@ -298,7 +283,6 @@ class TasbihApp(App):
         # ==== هدر: ساعت/تاریخ چپ، ذکر روز راست ====
         header = BoxLayout(orientation="horizontal", size_hint_y=None, height=dp(50))
 
-        # چپ: ساعت + تاریخ
         left_box = BoxLayout(orientation="vertical", size_hint_x=0.5)
         self.lbl_time = FLabel(text="00:00:00", size="20sp", clr=(1, 0.83, 0.31, 1), bold=True, halign="left")
         self.lbl_date = FLabel(text="", size="13sp", clr=(0.85, 0.85, 0.85, 0.8), halign="left")
@@ -306,7 +290,6 @@ class TasbihApp(App):
         left_box.add_widget(self.lbl_date)
         header.add_widget(left_box)
 
-        # راست: ذکر روز
         right_box = BoxLayout(orientation="vertical", size_hint_x=0.5)
         lbl_zekr_title = FLabel(text="ذکر امروز", size="10sp", clr=(1, 0.83, 0.31, 0.8), halign="right")
         self.lbl_week = FLabel(text="", size="14sp", clr=(1, 0.83, 0.31, 1), bold=True, halign="right")
@@ -316,17 +299,13 @@ class TasbihApp(App):
 
         lay.add_widget(header)
 
-        # ==== فاصله ۵۰dp ====
         lay.add_widget(Label(text="", size_hint_y=None, height=dp(50)))
 
-        # ==== ذکر انتخاب شده ====
         self.lbl_active = FLabel(text="ذکر خود را انتخاب کنید", size="22sp", clr=(0.29, 0.87, 0.50, 1), bold=True)
         lay.add_widget(self.lbl_active)
 
-        # ==== فاصله ۲۰dp ====
         lay.add_widget(Label(text="", size_hint_y=None, height=dp(20)))
 
-        # ==== کارت شمارنده ====
         card = GlassCard(radius=20)
         self.lbl_count = FLabel(text="۰", size="72sp", clr=(1, 1, 1, 1), bold=True)
         self.prog = ProgressBar(max=100, size_hint_y=None, height=dp(6))
@@ -356,16 +335,13 @@ class TasbihApp(App):
 
         lay.add_widget(card)
 
-        # ==== فاصله ۱۵dp ====
         lay.add_widget(Label(text="", size_hint_y=None, height=dp(15)))
 
-        # ==== دکمه بانک اذکار ====
         bb = StyledBtn(text="بانک اذکار مشکل‌گشا", bg=(0.49, 0.22, 0.93, 0.9))
         bb.height = dp(56)
         bb.bind(on_press=self.open_bank)
         lay.add_widget(bb)
 
-        # ==== بنر حمایت ====
         support_card = GlassCard(radius=14)
         support_card.padding = dp(12)
         support_card.spacing = dp(6)
@@ -441,13 +417,9 @@ class TasbihApp(App):
         except:
             pass
 
-    # --------------------------
-    # بانک اذکار
-    # --------------------------
     def open_bank(self, *a):
         box = BoxLayout(orientation="vertical", padding=dp(14), spacing=dp(12))
 
-        # عنوان
         title_box = BoxLayout(orientation="horizontal", size_hint_y=None, height=dp(40), spacing=dp(6))
         title_icon = StarIcon()
         title_text = FLabel(text="بانک اذکار", size="20sp", clr=(1, 0.83, 0.31, 1), bold=True, halign="right")
@@ -482,7 +454,6 @@ class TasbihApp(App):
         cls.bind(on_press=pop.dismiss)
         box.add_widget(cls)
 
-        # ==== کلیک روی پوشه → نمایش اذکار داخلش ====
         for card, name, zekrs in folder_buttons:
             card.trigger.bind(on_press=lambda x, n=name, z=zekrs, p=pop: self.show_zekrs(n, z, p))
         for btn, z in custom_buttons:
@@ -507,7 +478,6 @@ class TasbihApp(App):
             bg.line.rounded_rectangle = (bg.x, bg.y, bg.width, bg.height, 18)
         bg.bind(pos=upd_bg, size=upd_bg)
 
-        # آیکون رنگی
         icon = icon_cls()
         name_lbl = FLabel(text=name, size="16sp", clr=(0.95, 0.95, 0.95, 1), bold=True, halign="right")
         arrow_lbl = Label(text=">", font_size="24sp", color=(0.7, 0.7, 0.8, 0.6),
@@ -518,7 +488,6 @@ class TasbihApp(App):
         bg.add_widget(arrow_lbl)
         root.add_widget(bg)
 
-        # دکمه شفاف روی کل کارت
         btn = Button(background_normal="", background_color=(0, 0, 0, 0),
                      pos_hint={"x": 0, "y": 0}, size_hint=(1, 1))
         root.add_widget(btn)
@@ -545,7 +514,6 @@ class TasbihApp(App):
         back.bind(on_press=pop.dismiss)
         box.add_widget(back)
 
-        # ==== کلیک روی ذکر → نمایش روی صفحه اصلی + بستن همه پنجره‌ها ====
         for btn, z in zekr_buttons:
             btn.bind(on_press=lambda x, zz=z, p=pop, pp=parent_popup: self.pick_zekr(zz, p, pp))
 

@@ -3,8 +3,8 @@ import os
 import json
 import webbrowser
 from datetime import datetime
-import arabic_reshaper
-from bidi.algorithm import get_display
+#import arabic_reshaper
+#from bidi.algorithm import get_display
 
 from kivy.app import App
 from kivy.clock import Clock

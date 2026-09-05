@@ -8,7 +8,7 @@ from kivy.app import App
 from kivy.clock import Clock
 from kivy.core.text import LabelBase
 from kivy.core.window import Window
-from kivy.graphics import Color, RoundedRectangle, Line, Ellipse
+from kivy.graphics import Color, RoundedRectangle, Line
 from kivy.metrics import dp
 from kivy.uix.image import Image
 from kivy.uix.floatlayout import FloatLayout
@@ -79,79 +79,12 @@ WEEKLY_ZEKR = {
     4: "اَللّهُمَّ صَلِّ عَلی مُحَمَّد وَ آلِ مُحَمَّد",
 }
 
-# --------------------------
-# آیکون‌های سفارشی (Canvas)
-# --------------------------
-class IconBase(FloatLayout):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.size_hint = (None, None)
-        self.size = (dp(36), dp(36))
-
-class StarIcon(IconBase):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        with self.canvas:
-            Color(0.95, 0.75, 0.15, 1)
-            self.circle = Ellipse(pos=self.pos, size=self.size)
-        self.bind(pos=self._upd, size=self._upd)
-        lbl = Label(text="*", font_size="22sp", color=(0.15, 0.1, 0.05, 1),
-                    bold=True, pos_hint={'center_x': 0.5, 'center_y': 0.5})
-        self.add_widget(lbl)
-
-    def _upd(self, *args):
-        self.circle.pos = self.pos
-        self.circle.size = self.size
-
-class CoinIcon(IconBase):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        with self.canvas:
-            Color(0.9, 0.7, 0.15, 1)
-            self.circle = Ellipse(pos=self.pos, size=self.size)
-            Color(0.6, 0.45, 0.05, 1)
-            self.ring = Line(circle=(self.center_x, self.center_y, dp(14)), width=1.5)
-        self.bind(pos=self._upd, size=self._upd)
-        lbl = Label(text="$", font_size="20sp", color=(0.4, 0.3, 0.05, 1),
-                    bold=True, pos_hint={'center_x': 0.5, 'center_y': 0.5})
-        self.add_widget(lbl)
-
-    def _upd(self, *args):
-        self.circle.pos = self.pos
-        self.circle.size = self.size
-        self.ring.circle = (self.center_x, self.center_y, dp(14))
-
-class LockIcon(IconBase):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        with self.canvas:
-            Color(0.25, 0.55, 0.95, 1)
-            self.shackle = Ellipse(pos=(self.x+8, self.y+18), size=(20, 18))
-            self.body = RoundedRectangle(pos=(self.x+4, self.y+4), size=(28, 22), radius=[dp(4)])
-        self.bind(pos=self._upd)
-
-    def _upd(self, *args):
-        self.shackle.pos = (self.x+8, self.y+18)
-        self.shackle.size = (20, 18)
-        self.body.pos = (self.x+4, self.y+4)
-        self.body.size = (28, 22)
-
-class BirdIcon(IconBase):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        with self.canvas:
-            Color(0.85, 0.4, 0.65, 1)
-            self.body = Ellipse(pos=(self.x+10, self.y+10), size=(16, 14))
-        self.bind(pos=self._upd)
-
-    def _upd(self, *args):
-        self.body.pos = (self.x+10, self.y+10)
-
+# بهینه‌سازی بومی آیکون‌ها برای جلوگیری از کرش گرافیکی پایپ‌لاین در اندروید ۳۴
 ZEKR_FOLDERS = [
-    ("صلوات", StarIcon, ["اَللّهُمَّ صَلِّ عَلی مُحَمَّد وَ آلِ مُحَمَّد", "اَللّهُمَّ صَلِّ عَلی مُحَمَّد", "صَلَّی اللهُ عَلَیهِ وَ آلِهِ"]),
-    ("رزق و روزی", CoinIcon, ["یا رزاق", "یا غنی", "یا واسع", "یا فتاح", "استغفرالله"]),
-    ("گشایش مشکلات", LockIcon, ["یا فتاح", "یا کاشف الکرب", "یا مجیب", "یا قاضی الحاجات"]),
-    ("آرامش قلب", BirdIcon, ["یا سلام", "یا لطیف", "یا صبور", "یا نور", "یا رؤوف"]),
+    ("صلوات", "⭐", ["اَللّهُمَّ صَلِّ عَلی مُحَمَّد وَ آلِ مُحَمَّد", "اَللّهُمَّ صَلِّ عَلی مُحَمَّد", "صَلَّی اللهُ عَلَیهِ وَ آلِهِ"]),
+    ("رزق و روزی", "💰", ["یا رزاق", "یا غنی", "یا واسع", "یا فتاح", "استغفرالله"]),
+    ("گشایش مشکلات", "🔓", ["یا فتاح", "یا کاشف الکرب", "یا مجیب", "یا قاضی الحاجات"]),
+    ("آرامش قلب", "🕊️", ["یا سلام", "یا لطیف", "یا صبور", "یا نور", "یا رؤوف"]),
 ]
 
 class GlassCard(BoxLayout):
@@ -203,9 +136,6 @@ class FLabel(Label):
             self.font_name = FONT_NAME
         self.text = text
 
-# --------------------------
-# کلاس اصلی اپلیکیشن با لودر امن اندروید ۳۴
-# --------------------------
 class TasbihNoorApp(App):
     def build(self):
         self.DATA_FILE = os.path.join(self.user_data_dir, "zekr_data.json")
@@ -259,3 +189,56 @@ class TasbihNoorApp(App):
         self.folders_card.add_widget(self.lbl_bank_title)
         
         grid_folders = GridLayout(cols=2, spacing=dp(10), size_hint_y=None)
+        grid_folders.bind(minimum_height=grid_folders.setter('height'))
+        
+        self.folder_buttons = []
+        for name, emoji_icon, zekrs in ZEKR_FOLDERS:
+            box_item = BoxLayout(orientation='horizontal', padding=dp(5), spacing=dp(8))
+            box_item.add_widget(Label(text=emoji_icon, font_size="22sp", size_hint=(None, 1), width=dp(36)))
+            btn_folder = StyledBtn(text="Folder", bg=(0.2, 0.2, 0.35, 1))
+            btn_folder.bind(on_release=lambda x, z=zekrs, n=name: self.show_zekr_list(n, z))
+            box_item.add_widget(btn_folder)
+            grid_folders.add_widget(box_item)
+            self.folder_buttons.append((btn_folder, name))
+            
+        self.folders_card.add_widget(grid_folders)
+        self.main_layout.add_widget(self.folders_card)
+
+        root_scroll.add_widget(self.main_layout)
+        
+        Clock.schedule_once(self.secure_persian_injection, 0.5)
+        return root_scroll
+
+    def secure_persian_injection(self, dt):
+        try:
+            # رفع قطعی تداخل منطقی متغیر سراسری تایتل برنامه بر اساس تست کامپایلر
+            if hasattr(self, 'title_lbl') and self.title_lbl is not None:
+                self.title_lbl.text = fa("تسبیح نور")
+            self.lbl_week_title.text = fa("ذکر امروز هفته:")
+            current_day = datetime.now().weekday()
+            self.lbl_week_val.text = fa(WEEKLY_ZEKR.get(current_day, "ذکر روز یافت نشد"))
+            self.lbl_count.text = fa(f"تعداد ذکر: {to_fa_num(self.data['count'])}")
+            self.lbl_target.text = fa(f"هدف روزانه: {to_fa_num(self.data['daily_target'])}")
+            self.btn_reset.text = fa("🔄 ریست")
+            self.btn_count.text = fa("＋ شمارش ذکر")
+            self.lbl_bank_title.text = fa("بانک اذکار تفکیک شده")
+            for btn, name in self.folder_buttons:
+                btn.text = fa(name)
+        except Exception:
+            pass
+        Clock.schedule_interval(self.update_clock, 1)
+        self.update_clock(0)
+
+    def update_clock(self, dt):
+        try:
+            now = datetime.now()
+            jy, jm, jd = gregorian_to_jalali(now.year, now.month, now.day)
+            months = ["فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور", "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند"]
+            j_month_name = months[jm - 1]
+            time_str = now.strftime("%H:%M:%S")
+            date_str = f"{to_fa_num(jd)} {j_month_name} {to_fa_num(jy)}"
+            self.lbl_datetime.text = fa(f"ساعت {time_str}  |  {date_str}")
+        except Exception:
+            pass
+
+    def load_data(self):

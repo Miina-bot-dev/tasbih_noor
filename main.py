@@ -46,7 +46,6 @@ FA_DIGITS = str.maketrans("0123456789", "۰۱۲۳۴۵۶۷۸۹")
 def fa(text):
     if text is None:
         return ""
-    # راه‌حل طلایی: فرم‌دهی عربی و معکوس‌سازی بومی رشته برای حذف وابستگی به bidi و رفع کرش
     reshaped_text = arabic_reshaper.reshape(str(text))
     return reshaped_text[::-1]
 
@@ -238,25 +237,36 @@ class FLabel(Label):
         self.text = fa(text)
 
 # --------------------------
-# کلاس اصلی اپلیکیشن Kivy
+# کلاس اصلی اپلیکیشن با امکانات کامل
 # --------------------------
 class TasbihNoorApp(App):
     def build(self):
-        main_layout = BoxLayout(orientation='vertical', padding=dp(20), spacing=dp(10))
+        self.data = load_data()
         
+        # لایوت ریشه با قابلیت اسکرول برای کل صفحه در اندروید
+        root_scroll = ScrollView(size_hint=(1, 1))
+        self.main_layout = BoxLayout(orientation='vertical', padding=dp(15), spacing=dp(12), size_hint_y=None)
+        self.main_layout.bind(minimum_height=self.main_layout.setter('height'))
+        
+        # ۱. بخش بنر بالا
         if os.path.exists(BANNER_FILE):
-            main_layout.add_widget(Image(source=BANNER_FILE, size_hint_y=0.3))
+            self.main_layout.add_widget(Image(source=BANNER_FILE, size_hint_y=None, height=dp(140)))
         else:
-            main_layout.add_widget(FLabel(text="تسبیح نور", font_size="24sp", size_hint_y=0.1))
+            self.main_layout.add_widget(FLabel(text="تسبیح نور", font_size="26sp", bold=True, size_hint_y=None, height=dp(50)))
             
-        card = GlassCard()
-        card.add_widget(FLabel(text="برنامه با موفقیت اجرا شد", font_size="18sp"))
-        
-        btn = StyledBtn(text="شروع برنامه", bg=(0.2, 0.6, 0.2, 1))
-        card.add_widget(btn)
-        
-        main_layout.add_widget(card)
-        return main_layout
+        # ۲. کارت ساعت و تاریخ شمسی هوشمند
+        self.time_card = GlassCard()
+        self.lbl_datetime = FLabel(text="", font_size="16sp")
+        self.time_card.add_widget(self.lbl_datetime)
+        self.main_layout.add_widget(self.time_card)
+        Clock.schedule_interval(self.update_clock, 1)
+        self.update_clock(0)
 
-if __name__ == "__main__":
-    TasbihNoorApp().run()
+        # ۳. کارت ذکر روز هفته
+        weekday_card = GlassCard()
+        current_day = datetime.now().weekday()
+        day_zekr = WEEKLY_ZEKR.get(current_day, "ذکر روز یافت نشد")
+        weekday_card.add_widget(FLabel(text="ذکر امروز هفته:", font_size="14sp", color=(0.7, 0.7, 0.9, 1)))
+        weekday_card.add_widget(FLabel(text=day_zekr, font_size="20sp", bold=True, color=(1, 0.85, 0.3, 1)))
+        self.main_layout.add_widget(weekday_card)
+

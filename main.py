@@ -11,7 +11,6 @@ from kivy.core.window import Window
 from kivy.graphics import Color, RoundedRectangle, Line
 from kivy.metrics import dp
 from kivy.uix.image import Image
-from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
 from kivy.uix.gridlayout import GridLayout
@@ -20,11 +19,7 @@ from kivy.uix.popup import Popup
 from kivy.uix.scrollview import ScrollView
 from kivy.uix.progressbar import ProgressBar
 
-# --------------------------
-# تنظیمات پایه
-# --------------------------
 Window.clearcolor = (0.1, 0.04, 0.18, 1)
-
 BASE_DIR = os.path.dirname(os.path.abspath(__file__)) if '__file__' in locals() else '.'
 FONT_FILE = os.path.join(BASE_DIR, "Vazirmatn-Regular.ttf")
 BANNER_FILE = os.path.join(BASE_DIR, "main_banner.png")
@@ -33,24 +28,19 @@ if os.path.exists(FONT_FILE):
     try:
         LabelBase.register(name="Vazir", fn_regular=FONT_FILE)
         FONT_NAME = "Vazir"
-    except Exception:
+    except:
         FONT_NAME = None
 else:
     FONT_NAME = None
 
 FA_DIGITS = str.maketrans("0123456789", "۰۱۲۳۴۵۶۷۸۹")
 
-def fa(text):
-    if text is None:
-        return ""
-    try:
-        reshaped_text = arabic_reshaper.reshape(str(text))
-        return reshaped_text[::-1]
-    except Exception:
-        return str(text)
+def fa(t):
+    if not t: return ""
+    try: return arabic_reshaper.reshape(str(t))[::-1]
+    except: return str(t)
 
-def to_fa_num(s):
-    return str(s).translate(FA_DIGITS)
+def to_fa_num(s): return str(s).translate(FA_DIGITS)
 
 def gregorian_to_jalali(gy, gm, gd):
     g_d_m = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334]
@@ -70,29 +60,23 @@ def gregorian_to_jalali(gy, gm, gd):
     return jy, jm, jd
 
 WEEKLY_ZEKR = {
-    5: "یا رَبَّ الْعالَمین",
-    6: "یا ذاالْجَلالِ وَ الْاِکْرام",
-    0: "یا قاضِیَ الْحاجات",
-    1: "یا اَرْحَمَ الرّاحِمین",
-    2: "یا حَیُّ یا قَیّوُم",
-    3: "لا اِلهَ اِلّا اللهُ الْمَلِکُ الْحَقُّ الْمُبین",
-    4: "اَللّهُمَّ صَلِّ عَلی مُحَمَّد وَ آلِ مُحَمَّد",
+    5: "یا رَبَّ الْعالَمین", 6: "یا ذاالْجَلالِ وَ الْاِکْرام", 0: "یا قاضِیَ الْحاجات",
+    1: "یا اَرْحَمَ الرّاحِمین", 2: "یا حَیُّ یا قَیّوُم",
+    3: "لا اِلهَ اِلّا اللهُ الْمَلِکُ الْحَقُّ الْمُبین", 4: "اَللّهُمَّ صَلِّ عَلی مُحَمَّد وَ آلِ مُحَمَّد"
 }
 
-# بهینه‌سازی بومی آیکون‌ها برای جلوگیری از کرش گرافیکی پایپ‌لاین در اندروید ۳۴
 ZEKR_FOLDERS = [
     ("صلوات", "⭐", ["اَللّهُمَّ صَلِّ عَلی مُحَمَّد وَ آلِ مُحَمَّد", "اَللّهُمَّ صَلِّ عَلی مُحَمَّد", "صَلَّی اللهُ عَلَیهِ وَ آلِهِ"]),
     ("رزق و روزی", "💰", ["یا رزاق", "یا غنی", "یا واسع", "یا فتاح", "استغفرالله"]),
     ("گشایش مشکلات", "🔓", ["یا فتاح", "یا کاشف الکرب", "یا مجیب", "یا قاضی الحاجات"]),
-    ("آرامش قلب", "🕊️", ["یا سلام", "یا لطیف", "یا صبور", "یا نور", "یا رؤوف"]),
+    ("آرامش قلب", "🕊️", ["یا سلام", "یا لطیف", "یا صبور", "یا نور", "یا رؤوف"])
 ]
 
 class GlassCard(BoxLayout):
-    def __init__(self, radius=20, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, radius=20, **kw):
+        super().__init__(**kw)
         self.orientation = "vertical"
-        self.padding = dp(15)
-        self.spacing = dp(10)
+        self.padding, self.spacing = dp(15), dp(10)
         self.size_hint_y = None
         self.bind(minimum_height=self.setter("height"))
         with self.canvas.before:
@@ -100,42 +84,29 @@ class GlassCard(BoxLayout):
             self.bg = RoundedRectangle(radius=[radius])
             Color(1, 1, 1, 0.1)
             self.border = Line(rounded_rectangle=(0, 0, 100, 100, radius), width=1.2)
-        self.bind(pos=self._update, size=self._update)
-
-    def _update(self, *args):
-        self.bg.pos = self.pos
-        self.bg.size = self.size
+        self.bind(pos=self._upd, size=self._upd)
+    def _upd(self, *a):
+        self.bg.pos, self.bg.size = self.pos, self.size
         self.border.rounded_rectangle = (self.x, self.y, self.width, self.height, 20)
 
 class StyledBtn(Button):
-    def __init__(self, text="", bg=(0.15, 0.35, 0.85, 1), **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, text="", bg=(0.15, 0.35, 0.85, 1), **kw):
+        super().__init__(**kw)
         self.text = text
-        if FONT_NAME:
-            self.font_name = FONT_NAME
-        self.background_normal = ""
-        self.background_color = (0, 0, 0, 0)
-        self.bold = True
-        self.font_size = "16sp"
-        self.size_hint_y = None
-        self.height = dp(48)
-        self.bg_color = bg
+        if FONT_NAME: self.font_name = FONT_NAME
+        self.background_normal, self.background_color = "", (0, 0, 0, 0)
+        self.bold, self.font_size, self.size_hint_y, self.height = True, "16sp", None, dp(48)
         with self.canvas.before:
             Color(*bg)
             self.rect = RoundedRectangle(radius=[dp(16)])
         self.bind(pos=self._upd, size=self._upd)
-
-    def _upd(self, *args):
-        self.rect.pos = self.pos
-        self.rect.size = self.size
+    def _upd(self, *a): self.rect.pos, self.rect.size = self.pos, self.size
 
 class FLabel(Label):
-    def __init__(self, text="", **kwargs):
-        super().__init__(**kwargs)
-        if FONT_NAME:
-            self.font_name = FONT_NAME
+    def __init__(self, text="", **kw):
+        super().__init__(**kw)
+        if FONT_NAME: self.font_name = FONT_NAME
         self.text = text
-
 class TasbihNoorApp(App):
     def build(self):
         self.DATA_FILE = os.path.join(self.user_data_dir, "zekr_data.json")
@@ -205,13 +176,11 @@ class TasbihNoorApp(App):
         self.main_layout.add_widget(self.folders_card)
 
         root_scroll.add_widget(self.main_layout)
-        
         Clock.schedule_once(self.secure_persian_injection, 0.5)
         return root_scroll
 
     def secure_persian_injection(self, dt):
         try:
-            # رفع قطعی تداخل منطقی متغیر سراسری تایتل برنامه بر اساس تست کامپایلر
             if hasattr(self, 'title_lbl') and self.title_lbl is not None:
                 self.title_lbl.text = fa("تسبیح نور")
             self.lbl_week_title.text = fa("ذکر امروز هفته:")
@@ -222,10 +191,8 @@ class TasbihNoorApp(App):
             self.btn_reset.text = fa("🔄 ریست")
             self.btn_count.text = fa("＋ شمارش ذکر")
             self.lbl_bank_title.text = fa("بانک اذکار تفکیک شده")
-            for btn, name in self.folder_buttons:
-                btn.text = fa(name)
-        except Exception:
-            pass
+            for btn, name in self.folder_buttons: btn.text = fa(name)
+        except: pass
         Clock.schedule_interval(self.update_clock, 1)
         self.update_clock(0)
 
@@ -238,7 +205,59 @@ class TasbihNoorApp(App):
             time_str = now.strftime("%H:%M:%S")
             date_str = f"{to_fa_num(jd)} {j_month_name} {to_fa_num(jy)}"
             self.lbl_datetime.text = fa(f"ساعت {time_str}  |  {date_str}")
-        except Exception:
-            pass
+        except: pass
 
     def load_data(self):
+        if os.path.exists(self.DATA_FILE):
+            try:
+                with open(self.DATA_FILE, "r", encoding="utf-8") as f: return json.load(f)
+            except: pass
+        return {"count": 0, "daily_target": 100, "paid": False, "custom_zekrs": []}
+
+    def save_data(self):
+        try:
+            with open(self.DATA_FILE, "w", encoding="utf-8") as f:
+                json.dump(self.data, f, ensure_ascii=False, indent=2)
+        except: pass
+
+    def increment_count(self, instance):
+        self.data['count'] += 1
+        self.lbl_count.text = fa(f"تعداد ذکر: {to_fa_num(self.data['count'])}")
+        self.progress.value = min(self.data['count'], self.data['daily_target'])
+        self.save_data()
+
+    def reset_count(self, instance):
+        self.data['count'] = 0
+        self.lbl_count.text = fa(f"تعداد ذکر: {to_fa_num(self.data['count'])}")
+        self.progress.value = 0
+        self.save_data()
+
+    def show_zekr_list(self, title, zekrs):
+        content = BoxLayout(orientation='vertical', padding=dp(10), spacing=dp(10))
+        scroll = ScrollView()
+        list_layout = BoxLayout(orientation='vertical', spacing=dp(8), size_hint_y=None)
+        list_layout.bind(minimum_height=list_layout.setter('height'))
+        popup = Popup(title=fa(title), size_hint=(0.9, 0.8))
+        
+        for z in zekrs:
+            btn_zekr = StyledBtn(text=fa(z), bg=(0.25, 0.25, 0.45, 1))
+            btn_zekr.bind(on_release=lambda x, sz=z: self.select_zekr_from_bank(sz, popup))
+            list_layout.add_widget(btn_zekr)
+            
+        scroll.add_widget(list_layout)
+        content.add_widget(scroll)
+        btn_close = StyledBtn(text=fa("بستن"), bg=(0.5, 0.5, 0.5, 1))
+        btn_close.bind(on_release=popup.dismiss)
+        content.add_widget(btn_close)
+        popup.content = content
+        popup.open()
+
+    def select_zekr_from_bank(self, zekr_text, popup):
+        popup.dismiss()
+        self.reset_count(None)
+        info_popup = Popup(title=fa("ذکر انتخاب شد"), size_hint=(0.8, 0.3))
+        info_popup.content = FLabel(text=fa(zekr_text), font_size="16sp")
+        info_popup.open()
+
+if __name__ == "__main__":
+    TasbihNoorApp().run()

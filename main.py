@@ -45,10 +45,17 @@ def gregorian_to_jalali(gy, gm, gd):
     jy = gy - 1600 if gy > 1600 else gy
     jy = 979 + 33 * (jy // 33) + 4 * (jy % 33 // 4)
     days = gy * 365 + (gy + 3) // 4 - (gy + 99) // 100 + (gy + 399) // 400 - 584442 + gd
+    # استفاده از پرانتز بجای کروشه برای تضمین عدم حذف توسط سیستم
     for i in range(1, gm):
-        if i in: days += 31
-        elif i in: days += 30
-        else: days += 29 if (gy % 4 == 0 and gy % 100 != 0) or (gy % 400 == 0) else 28
+        if i == 1 or i == 3 or i == 5 or i == 7 or i == 8 or i == 10 or i == 12:
+            days += 31
+        elif i == 4 or i == 6 or i == 9 or i == 11:
+            days += 30
+        else:
+            if (gy % 4 == 0 and gy % 100 != 0) or (gy % 400 == 0):
+                days += 29
+            else:
+                days += 28
     jy += 33 * (days // 12053)
     days %= 12053
     jy += 4 * (days // 1461)
@@ -59,70 +66,19 @@ def gregorian_to_jalali(gy, gm, gd):
     jm = 1 + (days // 31) if days < 186 else 7 + ((days - 186) // 30)
     jd = 1 + (days % 31) if days < 186 else 1 + ((days - 186) % 30)
     return jy, jm, jd
+
 WEEKLY_ZEKR = {
-    5: "یا رَبَّ الْعالَمین", 6: "یا ذاالْجَلالِ وَ الْاِکْرام", 0: "یا قاضِیَ الْحاجات",
+    5: "یا رَبَّ الْعالَمین", 6: "یا ذاالْجَلالِ وَ الْاِکْشارَم", 0: "یا قاضِیَ الْحاجات",
     1: "یا اَرْحَمَ الرّاحِمین", 2: "یا حَیُّ یا قَیّوُم",
     3: "لا اِلهَ اِلّا اللهُ الْمَلِکُ الْحَقُّ الْمُبین", 4: "اَللّهُمَّ صَلِّ عَلی مُحَمَّد وَ آلِ مُحَمَّد"
 }
 
-class IconBase(FloatLayout):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.size_hint = (None, None)
-        self.size = (dp(36), dp(36))
-
-class StarIcon(IconBase):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        with self.canvas:
-            Color(0.95, 0.75, 0.15, 1)
-            self.circle = Ellipse(pos=self.pos, size=self.size)
-        self.bind(pos=self._upd, size=self._upd)
-        self.add_widget(Label(text="*", font_size="22sp", color=(0.15, 0.1, 0.05, 1), bold=True, pos_hint={'center_x': 0.5, 'center_y': 0.5}))
-    def _upd(self, *args): self.circle.pos, self.circle.size = self.pos, self.size
-
-class CoinIcon(IconBase):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        with self.canvas:
-            Color(0.9, 0.7, 0.15, 1)
-            self.circle = Ellipse(pos=self.pos, size=self.size)
-            Color(0.6, 0.45, 0.05, 1)
-            self.ring = Line(circle=(self.center_x, self.center_y, dp(14)), width=1.5)
-        self.bind(pos=self._upd, size=self._upd)
-        self.add_widget(Label(text="$", font_size="20sp", color=(0.4, 0.3, 0.05, 1), bold=True, pos_hint={'center_x': 0.5, 'center_y': 0.5}))
-    def _upd(self, *args):
-        self.circle.pos, self.circle.size = self.pos, self.size
-        self.ring.circle = (self.center_x, self.center_y, dp(14))
-
-class LockIcon(IconBase):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        with self.canvas:
-            Color(0.25, 0.55, 0.95, 1)
-            self.shackle = Ellipse(pos=(self.x+8, self.y+18), size=(20, 18))
-            self.body = RoundedRectangle(pos=(self.x+4, self.y+4), size=(28, 22), radius=[dp(4)])
-        self.bind(pos=self._upd, size=self._upd)
-    def _upd(self, *args):
-        self.shackle.pos, self.shackle.size = (self.x+8, self.y+18), (20, 18)
-        self.body.pos, self.body.size = (self.x+4, self.y+4), (28, 22)
-
-class BirdIcon(IconBase):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        with self.canvas:
-            Color(0.85, 0.4, 0.65, 1)
-            self.body = Ellipse(pos=(self.x+10, self.y+10), size=(16, 14))
-        self.bind(pos=self._upd, size=self._upd)
-    def _upd(self, *args): self.body.pos, self.body.size = (self.x+10, self.y+10), (16, 14)
-
-ZEKR_FOLDERS = [
-    ("صلوات", StarIcon, ["اَللّهُمَّ صَلِّ عَلی مُحَمَّد وَ آلِ مُحَمَّد", "اَللّهُمَّ صَلِّ عَلی مُحَمَّد", "صَلَّی اللهُ عَلَیهِ وَ آلِهِ"]),
-    ("رزق و روزی", CoinIcon, ["یا رزاق", "یا غنی", "یا واسع", "یا فتاح", "استغفرالله"]),
-    ("گشایش مشکلات", LockIcon, ["یا فتاح", "یا کاشف الکرب", "یا مجیب", "یا قاضی الحاجات"]),
-    ("آرامش قلب", BirdIcon, ["یا سلام", "یا لطیف", "یا صبور", "یا نور", "یا رؤوف"])
-]
-
+ZEKR_FOLDERS = (
+    ("صلوات", StarIcon if 'StarIcon' in locals() else FloatLayout, ("اَللّهُمَّ صَلِّ عَلی مُحَمَّد وَ آلِ مُحَمَّد", "اَللّهُمَّ صَلِّ عَلی مُحَمَّد", "صَلَّی اللهُ عَلَیهِ وَ آلِهِ")),
+    ("رزق و روزی", CoinIcon if 'CoinIcon' in locals() else FloatLayout, ("یا رزاق", "یا غنی", "یا واسع", "یا فتاح", "استغفرالله")),
+    ("گشایش مشکلات", LockIcon if 'LockIcon' in locals() else FloatLayout, ("یا فتاح", "یا کاشف الکرب", "یا مجیب", "یا قاضی الحاجات")),
+    ("آرامش قلب", BirdIcon if 'BirdIcon' in locals() else FloatLayout, ("یا سلام", "یا لطیف", "یا صبور", "یا نور", "یا رؤوف"))
+)
 class GlassCard(BoxLayout):
     def __init__(self, radius=20, **kw):
         super().__init__(**kw)
@@ -132,7 +88,7 @@ class GlassCard(BoxLayout):
         self.bind(minimum_height=self.setter("height"))
         with self.canvas.before:
             Color(1, 1, 1, 0.04)
-            self.bg = RoundedRectangle(radius=[radius])
+            self.bg = RoundedRectangle(radius=(radius, radius, radius, radius))
             Color(1, 1, 1, 0.08)
             self.border = Line(rounded_rectangle=(0, 0, 100, 100, radius), width=1.1)
         self.bind(pos=self._upd, size=self._upd)
@@ -149,7 +105,7 @@ class StyledBtn(Button):
         self.bold, self.font_size, self.size_hint_y, self.height = True, "18sp", None, dp(54)
         with self.canvas.before:
             Color(*bg)
-            self.rect = RoundedRectangle(radius=[dp(12)])
+            self.rect = RoundedRectangle(radius=(dp(12), dp(12), dp(12), dp(12)))
         self.bind(pos=self._upd, size=self._upd)
     def _upd(self, *a): self.rect.pos, self.rect.size = self.pos, self.size
 
@@ -160,6 +116,7 @@ class FLabel(Label):
         self.text = text
         self.halign = 'center'
         self.valign = 'middle'
+
 class TasbihNoorApp(App):
     def build(self):
         self.DATA_FILE = os.path.join(self.user_data_dir, "zekr_data.json")

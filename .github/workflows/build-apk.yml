@@ -1,4 +1,4 @@
-name: Build Signed APK
+name: Build Official Signed APK
 
 on:
   workflow_dispatch:
@@ -65,8 +65,8 @@ jobs:
           fi
 
           for url in \
-            "https://sourceforge.net/projects/freetype/files/freetype2/2.14.1/freetype-2.14.1.tar.gz/download" \
-            "https://github.com/freetype/freetype/archive/refs/tags/VER-2-14-1.tar.gz"; do
+            "https://sourceforge.net" \
+            "https://github.com"; do
             echo "Trying: $url"
             if curl -L --fail --retry 3 --retry-delay 5 -o freetype-2.14.1.tar.gz "$url"; then
               if gzip -t freetype-2.14.1.tar.gz 2>/dev/null; then
@@ -77,29 +77,27 @@ jobs:
             rm -f freetype-2.14.1.tar.gz
           done
 
-          echo "WARNING: Could not pre-download freetype. Build will try itself."
-
-      - name: Build APK
+      - name: Build Official Release APK
         run: |
           rm -rf bin/
-          # تغییر وضعیت بیلد به دباگ جهت تولید ساختار باینری امن و عدم دستکاری مخرب کدها
-          yes | buildozer android debug
+          # تغییر وضعیت به حالت ریلیز رسمی جهت هماهنگی با اندروید و اسکنر گوشی
+          yes | buildozer android release
         env:
           BUILDOZER_WARN_ON_ROOT: 0
 
       - name: Prepare Final Directory
         run: |
           mkdir -p bin/final
-          # پیدا کردن فایل APK تولید شده توسط بیلدوزر
-          APK=$(find bin -name "*.apk" | sort -V | tail -1)
+          # پیدا کردن فایل ریلیز غیر امضا شده
+          APK=$(find bin -name "*-unsigned.apk" -o -name "*-release.apk" | sort -V | tail -1)
           if [ -z "$APK" ]; then
-            echo "ERROR: No APK found"
+            echo "ERROR: No Release APK found"
             exit 1
           fi
           echo "Found APK for signing: $APK"
           cp "$APK" bin/final/source-apk.apk
 
-      - name: Sign APK
+      - name: Sign APK Officially
         if: success()
         env:
           KEYSTORE_PASS: ${{ secrets.KEYSTORE_PASS }}
@@ -108,12 +106,10 @@ jobs:
           BUILD_TOOLS=$(find "$ANDROID_SDK_ROOT/build-tools" -maxdepth 1 -type d | sort -V | tail -1)
           echo "Using build-tools: $BUILD_TOOLS"
 
-          # هم‌تراز سازی پکت‌های فایل بدون پچ مخرب مانیفست
           "$BUILD_TOOLS/zipalign" -v -p 4 \
             bin/final/source-apk.apk \
             bin/final/aligned.apk
 
-          # امضای نهایی و رسمی فایل
           "$BUILD_TOOLS/apksigner" sign \
             --ks tasbih-releser.keystore \
             --ks-key-alias tasbih-key \

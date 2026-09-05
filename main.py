@@ -8,9 +8,10 @@ from kivy.app import App
 from kivy.clock import Clock
 from kivy.core.text import LabelBase
 from kivy.core.window import Window
-from kivy.graphics import Color, RoundedRectangle, Line
+from kivy.graphics import Color, RoundedRectangle, Line, Ellipse
 from kivy.metrics import dp
 from kivy.uix.image import Image
+from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
 from kivy.uix.gridlayout import GridLayout
@@ -19,6 +20,9 @@ from kivy.uix.popup import Popup
 from kivy.uix.scrollview import ScrollView
 from kivy.uix.progressbar import ProgressBar
 
+# --------------------------
+# تنظیمات پایه و گرافیکی
+# --------------------------
 Window.clearcolor = (0.1, 0.04, 0.18, 1)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__)) if '__file__' in locals() else '.'
 FONT_FILE = os.path.join(BASE_DIR, "Vazirmatn-Regular.ttf")
@@ -28,10 +32,8 @@ if os.path.exists(FONT_FILE):
     try:
         LabelBase.register(name="Vazir", fn_regular=FONT_FILE)
         FONT_NAME = "Vazir"
-    except:
-        FONT_NAME = None
-else:
-    FONT_NAME = None
+    except: FONT_NAME = None
+else: FONT_NAME = None
 
 FA_DIGITS = str.maketrans("0123456789", "۰۱۲۳۴۵۶۷۸۹")
 
@@ -65,13 +67,66 @@ WEEKLY_ZEKR = {
     3: "لا اِلهَ اِلّا اللهُ الْمَلِکُ الْحَقُّ الْمُبین", 4: "اَللّهُمَّ صَلِّ عَلی مُحَمَّد وَ آلِ مُحَمَّد"
 }
 
-ZEKR_FOLDERS = [
-    ("صلوات", "⭐", ["اَللّهُمَّ صَلِّ عَلی مُحَمَّد وَ آلِ مُحَمَّد", "اَللّهُمَّ صَلِّ عَلی مُحَمَّد", "صَلَّی اللهُ عَلَیهِ وَ آلِهِ"]),
-    ("رزق و روزی", "💰", ["یا رزاق", "یا غنی", "یا واسع", "یا فتاح", "استغفرالله"]),
-    ("گشایش مشکلات", "🔓", ["یا فتاح", "یا کاشف الکرب", "یا مجیب", "یا قاضی الحاجات"]),
-    ("آرامش قلب", "🕊️", ["یا سلام", "یا لطیف", "یا صبور", "یا نور", "یا رؤوف"])
-]
+# --------------------------
+# کلاس بازسازی شده آیکون‌های گرافیکی اورجینال شما (کاملاً پایدار)
+# --------------------------
+class IconBase(FloatLayout):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.size_hint = (None, None)
+        self.size = (dp(36), dp(36))
 
+class StarIcon(IconBase):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        with self.canvas:
+            Color(0.95, 0.75, 0.15, 1)
+            self.circle = Ellipse(pos=self.pos, size=self.size)
+        self.bind(pos=self._upd, size=self._upd)
+        self.add_widget(Label(text="*", font_size="22sp", color=(0.15, 0.1, 0.05, 1), bold=True, pos_hint={'center_x': 0.5, 'center_y': 0.5}))
+    def _upd(self, *args): self.circle.pos, self.circle.size = self.pos, self.size
+
+class CoinIcon(IconBase):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        with self.canvas:
+            Color(0.9, 0.7, 0.15, 1)
+            self.circle = Ellipse(pos=self.pos, size=self.size)
+            Color(0.6, 0.45, 0.05, 1)
+            self.ring = Line(circle=(self.center_x, self.center_y, dp(14)), width=1.5)
+        self.bind(pos=self._upd, size=self._upd)
+        self.add_widget(Label(text="$", font_size="20sp", color=(0.4, 0.3, 0.05, 1), bold=True, pos_hint={'center_x': 0.5, 'center_y': 0.5}))
+    def _upd(self, *args):
+        self.circle.pos, self.circle.size = self.pos, self.size
+        self.ring.circle = (self.center_x, self.center_y, dp(14))
+
+class LockIcon(IconBase):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        with self.canvas:
+            Color(0.25, 0.55, 0.95, 1)
+            self.shackle = Ellipse(pos=(self.x+8, self.y+18), size=(20, 18))
+            self.body = RoundedRectangle(pos=(self.x+4, self.y+4), size=(28, 22), radius=[dp(4)])
+        self.bind(pos=self._upd, size=self._upd)
+    def _upd(self, *args):
+        self.shackle.pos, self.shackle.size = (self.x+8, self.y+18), (20, 18)
+        self.body.pos, self.body.size = (self.x+4, self.y+4), (28, 22)
+
+class BirdIcon(IconBase):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        with self.canvas:
+            Color(0.85, 0.4, 0.65, 1)
+            self.body = Ellipse(pos=(self.x+10, self.y+10), size=(16, 14))
+        self.bind(pos=self._upd, size=self._upd)
+    def _upd(self, *args): self.body.pos, self.body.size = (self.x+10, self.y+10), (16, 14)
+
+ZEKR_FOLDERS = [
+    ("صلوات", StarIcon, ["اَللّهُمَّ صَلِّ عَلی مُحَمَّد وَ آلِ مُحَمَّد", "اَللّهُمَّ صَلِّ عَلی مُحَمَّد", "صَلَّی اللهُ عَلَیهِ وَ آلِهِ"]),
+    ("رزق و روزی", CoinIcon, ["یا رزاق", "یا غنی", "یا واسع", "یا فتاح", "استغفرالله"]),
+    ("گشایش مشکلات", LockIcon, ["یا فتاح", "یا کاشف الکرب", "یا مجیب", "یا قاضی الحاجات"]),
+    ("آرامش قلب", BirdIcon, ["یا سلام", "یا لطیف", "یا صبور", "یا نور", "یا رؤوف"])
+]
 class GlassCard(BoxLayout):
     def __init__(self, radius=20, **kw):
         super().__init__(**kw)
@@ -107,6 +162,9 @@ class FLabel(Label):
         super().__init__(**kw)
         if FONT_NAME: self.font_name = FONT_NAME
         self.text = text
+        self.halign = 'center'
+        self.valign = 'middle'
+
 class TasbihNoorApp(App):
     def build(self):
         self.DATA_FILE = os.path.join(self.user_data_dir, "zekr_data.json")
@@ -163,9 +221,9 @@ class TasbihNoorApp(App):
         grid_folders.bind(minimum_height=grid_folders.setter('height'))
         
         self.folder_buttons = []
-        for name, emoji_icon, zekrs in ZEKR_FOLDERS:
+        for name, IconClass, zekrs in ZEKR_FOLDERS:
             box_item = BoxLayout(orientation='horizontal', padding=dp(5), spacing=dp(8))
-            box_item.add_widget(Label(text=emoji_icon, font_size="22sp", size_hint=(None, 1), width=dp(36)))
+            box_item.add_widget(IconClass())
             btn_folder = StyledBtn(text="Folder", bg=(0.2, 0.2, 0.35, 1))
             btn_folder.bind(on_release=lambda x, z=zekrs, n=name: self.show_zekr_list(n, z))
             box_item.add_widget(btn_folder)

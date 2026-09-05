@@ -28,7 +28,6 @@ from kivy.uix.progressbar import ProgressBar
 Window.clearcolor = (0.1, 0.04, 0.18, 1)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__)) if '__file__' in locals() else '.'
-DATA_FILE = os.path.join(BASE_DIR, "zekr_data.json")
 FONT_FILE = os.path.join(BASE_DIR, "Vazirmatn-Regular.ttf")
 BANNER_FILE = os.path.join(BASE_DIR, "main_banner.png")
 
@@ -68,22 +67,6 @@ def gregorian_to_jalali(gy, gm, gd):
     jm = 1 + (days // 31) if days < 186 else 7 + ((days - 186) // 30)
     jd = 1 + (days % 31) if days < 186 else 1 + ((days - 186) % 30)
     return jy, jm, jd
-
-def load_data():
-    if os.path.exists(DATA_FILE):
-        try:
-            with open(DATA_FILE, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except:
-            pass
-    return {"count": 0, "daily_target": 100, "paid": False, "custom_zekrs": []}
-
-def save_data(data):
-    try:
-        with open(DATA_FILE, "w", encoding="utf-8") as f:
-            json.dump(data, f, ensure_ascii=False, indent=2)
-    except Exception:
-        pass
 
 # --------------------------
 # اذکار آماده
@@ -237,32 +220,31 @@ class FLabel(Label):
         self.text = fa(text)
 
 # --------------------------
-# کلاس اصلی اپلیکیشن با امکانات کامل
+# کلاس اصلی اپلیکیشن
 # --------------------------
 class TasbihNoorApp(App):
     def build(self):
-        self.data = load_data()
+        # آدرس‌دهی فوق امن برای حافظه اندروید ۳۴ جهت جلوگیری از کرش دیتابیس
+        self.DATA_FILE = os.path.join(self.user_data_dir, "zekr_data.json")
+        self.data = self.load_data()
         
-        # لایوت ریشه با قابلیت اسکرول برای کل صفحه در اندروید
         root_scroll = ScrollView(size_hint=(1, 1))
         self.main_layout = BoxLayout(orientation='vertical', padding=dp(15), spacing=dp(12), size_hint_y=None)
         self.main_layout.bind(minimum_height=self.main_layout.setter('height'))
         
-        # ۱. بخش بنر بالا
         if os.path.exists(BANNER_FILE):
             self.main_layout.add_widget(Image(source=BANNER_FILE, size_hint_y=None, height=dp(140)))
         else:
             self.main_layout.add_widget(FLabel(text="تسبیح نور", font_size="26sp", bold=True, size_hint_y=None, height=dp(50)))
             
-        # ۲. کارت ساعت و تاریخ شمسی هوشمند
         self.time_card = GlassCard()
-        self.lbl_datetime = FLabel(text="", font_size="16sp")
+        self.lbl_datetime = FLabel(text=fa("در حال بارگذاری ساعت..."), font_size="16sp")
         self.time_card.add_widget(self.lbl_datetime)
         self.main_layout.add_widget(self.time_card)
-        Clock.schedule_interval(self.update_clock, 1)
-        self.update_clock(0)
+        
+        # ترفند طلایی: استارت ساعت با تاخیر امن بعد از بالا آمدن کامل پنجره برنامه جهت رفع کرش
+        Clock.schedule_once(self.start_clock_securely, 1.5)
 
-        # ۳. کارت ذکر روز هفته
         weekday_card = GlassCard()
         current_day = datetime.now().weekday()
         day_zekr = WEEKLY_ZEKR.get(current_day, "ذکر روز یافت نشد")
@@ -270,3 +252,10 @@ class TasbihNoorApp(App):
         weekday_card.add_widget(FLabel(text=day_zekr, font_size="20sp", bold=True, color=(1, 0.85, 0.3, 1)))
         self.main_layout.add_widget(weekday_card)
 
+        self.counter_card = GlassCard()
+        self.lbl_count = FLabel(text=f"تعداد ذکر: {to_fa_num(self.data['count'])}", font_size="24sp", bold=True)
+        self.counter_card.add_widget(self.lbl_count)
+        
+        self.progress = ProgressBar(max=self.data['daily_target'], value=min(self.data['count'], self.data['daily_target']), size_hint_y=None, height=dp(15))
+        self.counter_card.add_widget(self.progress)
+        

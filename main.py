@@ -4,7 +4,6 @@ import json
 import webbrowser
 from datetime import datetime
 import arabic_reshaper
-from bidi.algorithm import get_display
 
 from kivy.app import App
 from kivy.clock import Clock
@@ -47,7 +46,9 @@ FA_DIGITS = str.maketrans("0123456789", "۰۱۲۳۴۵۶۷۸۹")
 def fa(text):
     if text is None:
         return ""
-    return get_display(arabic_reshaper.reshape(str(text)))
+    # راه‌حل طلایی: فرم‌دهی عربی و معکوس‌سازی بومی رشته برای حذف وابستگی به bidi و رفع کرش
+    reshaped_text = arabic_reshaper.reshape(str(text))
+    return reshaped_text[::-1]
 
 def to_fa_num(s):
     return str(s).translate(FA_DIGITS)
@@ -108,7 +109,6 @@ class IconBase(FloatLayout):
         self.size = (dp(36), dp(36))
 
 class StarIcon(IconBase):
-    """ستاره زرد"""
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         with self.canvas:
@@ -124,7 +124,6 @@ class StarIcon(IconBase):
         self.circle.size = self.size
 
 class CoinIcon(IconBase):
-    """سکه طلایی"""
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         with self.canvas:
@@ -143,7 +142,6 @@ class CoinIcon(IconBase):
         self.ring.circle = (self.center_x, self.center_y, dp(14))
 
 class LockIcon(IconBase):
-    """قفل آبی"""
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         with self.canvas:
@@ -162,7 +160,6 @@ class LockIcon(IconBase):
         self.hole.pos = (self.x+14, self.y+12)
 
 class BirdIcon(IconBase):
-    """پرنده صورتی"""
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         with self.canvas:
@@ -241,7 +238,7 @@ class FLabel(Label):
         self.text = fa(text)
 
 # --------------------------
-# کلاس اصلی اپلیکیشن Kivy جهت لود شدن امن برنامه
+# کلاس اصلی اپلیکیشن Kivy
 # --------------------------
 class TasbihNoorApp(App):
     def build(self):

@@ -108,6 +108,7 @@ class IconBase(FloatLayout):
         self.size = (dp(36), dp(36))
 
 class StarIcon(IconBase):
+    """ستاره زرد"""
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         with self.canvas:
@@ -123,6 +124,7 @@ class StarIcon(IconBase):
         self.circle.size = self.size
 
 class CoinIcon(IconBase):
+    """سکه طلایی"""
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         with self.canvas:
@@ -141,6 +143,7 @@ class CoinIcon(IconBase):
         self.ring.circle = (self.center_x, self.center_y, dp(14))
 
 class LockIcon(IconBase):
+    """قفل آبی"""
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         with self.canvas:
@@ -159,6 +162,7 @@ class LockIcon(IconBase):
         self.hole.pos = (self.x+14, self.y+12)
 
 class BirdIcon(IconBase):
+    """پرنده صورتی"""
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         with self.canvas:
@@ -219,7 +223,7 @@ class StyledBtn(Button):
         self.bg_color = bg
         with self.canvas.before:
             Color(*bg)
-            self.rect = RoundedRectangle(radius=[16])
+            self.rect = RoundedRectangle(radius=[dp(16)])
         self.bind(pos=self._upd, size=self._upd)
 
     def _upd(self, *args):
@@ -237,11 +241,10 @@ class FLabel(Label):
         self.text = fa(text)
 
 # --------------------------
-# کلاس اصلی اپلیکیشن Kivy جهت بالا آمدن امن لایوت شما
+# کلاس اصلی اپلیکیشن Kivy جهت لود شدن امن برنامه
 # --------------------------
 class TasbihNoorApp(App):
     def build(self):
-        # ساخت لایوت اصلی برای بالا آمدن ویجت‌ها
         main_layout = BoxLayout(orientation='vertical', padding=dp(20), spacing=dp(10))
         
         if os.path.exists(BANNER_FILE):
@@ -252,7 +255,7 @@ class TasbihNoorApp(App):
         card = GlassCard()
         card.add_widget(FLabel(text="برنامه با موفقیت اجرا شد", font_size="18sp"))
         
-        btn = StyledBtn(text="ذکر روز", bg=(0.2, 0.6, 0.2, 1))
+        btn = StyledBtn(text="شروع برنامه", bg=(0.2, 0.6, 0.2, 1))
         card.add_widget(btn)
         
         main_layout.add_widget(card)

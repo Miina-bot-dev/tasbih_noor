@@ -9,7 +9,7 @@ source.include_exts = py,png,jpg,jpeg,kv,atlas,ttf,json,txt,md
 version = 1.0.1
 version.code = 2
 
-requirements = python3,kivy==2.2.1,arabic-reshaper,python-bidi==0.4.2,setuptools,wheel,six,pillow
+requirements = python3,kivy==2.2.1,arabic-reshaper,setuptools,wheel,pillow
 
 orientation = portrait
 fullscreen = 0

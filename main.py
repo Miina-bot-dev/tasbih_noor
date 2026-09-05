@@ -20,13 +20,9 @@ from kivy.uix.popup import Popup
 from kivy.uix.scrollview import ScrollView
 from kivy.uix.progressbar import ProgressBar
 
-# --------------------------
-# تنظیمات پایه و گرافیکی اصلی شما
-# --------------------------
 Window.clearcolor = (0.1, 0.04, 0.18, 1)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__)) if '__file__' in locals() else '.'
 FONT_FILE = os.path.join(BASE_DIR, "Vazirmatn-Regular.ttf")
-# تصویر پس‌زمینه کل صفحه شما
 BACKGROUND_FILE = os.path.join(BASE_DIR, "main_banner.png")
 
 if os.path.exists(FONT_FILE):
@@ -46,11 +42,13 @@ def fa(t):
 def to_fa_num(s): return str(s).translate(FA_DIGITS)
 
 def gregorian_to_jalali(gy, gm, gd):
-    g_d_m =
-    jy = 979 if gy > 1600 else 0
-    gy -= 1600 if gy > 1600 else 621
-    gy2 = gy + 1 if gm > 2 else gy
-    days = (365 * gy) + ((gy2 + 3) // 4) - ((gy2 + 99) // 100) + ((gy2 + 399) // 400) - 80 + gd + g_d_m[gm - 1]
+    jy = gy - 1600 if gy > 1600 else gy
+    jy = 979 + 33 * (jy // 33) + 4 * (jy % 33 // 4)
+    days = gy * 365 + (gy + 3) // 4 - (gy + 99) // 100 + (gy + 399) // 400 - 584442 + gd
+    for i in range(1, gm):
+        if i in: days += 31
+        elif i in: days += 30
+        else: days += 29 if (gy % 4 == 0 and gy % 100 != 0) or (gy % 400 == 0) else 28
     jy += 33 * (days // 12053)
     days %= 12053
     jy += 4 * (days // 1461)
@@ -61,12 +59,69 @@ def gregorian_to_jalali(gy, gm, gd):
     jm = 1 + (days // 31) if days < 186 else 7 + ((days - 186) // 30)
     jd = 1 + (days % 31) if days < 186 else 1 + ((days - 186) % 30)
     return jy, jm, jd
-
 WEEKLY_ZEKR = {
     5: "یا رَبَّ الْعالَمین", 6: "یا ذاالْجَلالِ وَ الْاِکْرام", 0: "یا قاضِیَ الْحاجات",
     1: "یا اَرْحَمَ الرّاحِمین", 2: "یا حَیُّ یا قَیّوُم",
     3: "لا اِلهَ اِلّا اللهُ الْمَلِکُ الْحَقُّ الْمُبین", 4: "اَللّهُمَّ صَلِّ عَلی مُحَمَّد وَ آلِ مُحَمَّد"
 }
+
+class IconBase(FloatLayout):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.size_hint = (None, None)
+        self.size = (dp(36), dp(36))
+
+class StarIcon(IconBase):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        with self.canvas:
+            Color(0.95, 0.75, 0.15, 1)
+            self.circle = Ellipse(pos=self.pos, size=self.size)
+        self.bind(pos=self._upd, size=self._upd)
+        self.add_widget(Label(text="*", font_size="22sp", color=(0.15, 0.1, 0.05, 1), bold=True, pos_hint={'center_x': 0.5, 'center_y': 0.5}))
+    def _upd(self, *args): self.circle.pos, self.circle.size = self.pos, self.size
+
+class CoinIcon(IconBase):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        with self.canvas:
+            Color(0.9, 0.7, 0.15, 1)
+            self.circle = Ellipse(pos=self.pos, size=self.size)
+            Color(0.6, 0.45, 0.05, 1)
+            self.ring = Line(circle=(self.center_x, self.center_y, dp(14)), width=1.5)
+        self.bind(pos=self._upd, size=self._upd)
+        self.add_widget(Label(text="$", font_size="20sp", color=(0.4, 0.3, 0.05, 1), bold=True, pos_hint={'center_x': 0.5, 'center_y': 0.5}))
+    def _upd(self, *args):
+        self.circle.pos, self.circle.size = self.pos, self.size
+        self.ring.circle = (self.center_x, self.center_y, dp(14))
+
+class LockIcon(IconBase):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        with self.canvas:
+            Color(0.25, 0.55, 0.95, 1)
+            self.shackle = Ellipse(pos=(self.x+8, self.y+18), size=(20, 18))
+            self.body = RoundedRectangle(pos=(self.x+4, self.y+4), size=(28, 22), radius=[dp(4)])
+        self.bind(pos=self._upd, size=self._upd)
+    def _upd(self, *args):
+        self.shackle.pos, self.shackle.size = (self.x+8, self.y+18), (20, 18)
+        self.body.pos, self.body.size = (self.x+4, self.y+4), (28, 22)
+
+class BirdIcon(IconBase):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        with self.canvas:
+            Color(0.85, 0.4, 0.65, 1)
+            self.body = Ellipse(pos=(self.x+10, self.y+10), size=(16, 14))
+        self.bind(pos=self._upd, size=self._upd)
+    def _upd(self, *args): self.body.pos, self.body.size = (self.x+10, self.y+10), (16, 14)
+
+ZEKR_FOLDERS = [
+    ("صلوات", StarIcon, ["اَللّهُمَّ صَلِّ عَلی مُحَمَّد وَ آلِ مُحَمَّد", "اَللّهُمَّ صَلِّ عَلی مُحَمَّد", "صَلَّی اللهُ عَلَیهِ وَ آلِهِ"]),
+    ("رزق و روزی", CoinIcon, ["یا رزاق", "یا غنی", "یا واسع", "یا فتاح", "استغفرالله"]),
+    ("گشایش مشکلات", LockIcon, ["یا فتاح", "یا کاشف الکرب", "یا مجیب", "یا قاضی الحاجات"]),
+    ("آرامش قلب", BirdIcon, ["یا سلام", "یا لطیف", "یا صبور", "یا نور", "یا رؤوف"])
+]
 
 class GlassCard(BoxLayout):
     def __init__(self, radius=20, **kw):
@@ -103,22 +158,19 @@ class FLabel(Label):
         super().__init__(**kw)
         if FONT_NAME: self.font_name = FONT_NAME
         self.text = text
+        self.halign = 'center'
+        self.valign = 'middle'
 class TasbihNoorApp(App):
     def build(self):
         self.DATA_FILE = os.path.join(self.user_data_dir, "zekr_data.json")
         self.data = self.load_data()
-        
-        # لایه اصلی کل صفحه (FloatLayout برای تنظیم عکس پس‌زمینه سراسری شما)
         self.root_layout = FloatLayout()
         
         if os.path.exists(BACKGROUND_FILE):
             self.bg_img = Image(source=BACKGROUND_FILE, allow_stretch=True, keep_ratio=False, size_hint=(1, 1))
             self.root_layout.add_widget(self.bg_img)
             
-        # المان‌های داخلی که به صورت عمودی با نظم عالی روی تصویر چیده می‌شوند
         content_box = BoxLayout(orientation='vertical', padding=dp(20), spacing=dp(15), size_hint=(1, 1))
-        
-        # ۱. بخش ساعت و تاریخ بالا سمت چپ/راست تصویر اصلی شما
         header_box = BoxLayout(orientation='horizontal', size_hint_y=None, height=dp(60))
         self.lbl_datetime = FLabel(text="", font_size="15sp", size_hint_x=0.4, color=(1, 1, 1, 0.8))
         self.lbl_week_val = FLabel(text="", font_size="15sp", size_hint_x=0.6, bold=True, color=(1, 0.9, 0.5, 1))
@@ -126,15 +178,11 @@ class TasbihNoorApp(App):
         header_box.add_widget(self.lbl_week_val)
         content_box.add_widget(header_box)
         
-        # ۲. متن راهنمای انتخاب ذکر شما
         self.lbl_guide = FLabel(text="", font_size="20sp", color=(0.4, 0.9, 0.5, 1), size_hint_y=None, height=dp(40))
         content_box.add_widget(self.lbl_guide)
-        
-        # ۳. عدد بزرگ ذکرشمار مرکزی شما
         self.lbl_count = FLabel(text="0", font_size="75sp", bold=True, size_hint_y=None, height=dp(110))
         content_box.add_widget(self.lbl_count)
         
-        # ۴. نوار پیشرفت باریک و هدف روزانه شما
         progress_box = BoxLayout(orientation='vertical', size_hint_y=None, height=dp(35), spacing=dp(2))
         self.progress = ProgressBar(max=self.data['daily_target'], value=min(self.data['count'], self.data['daily_target']), size_hint_y=None, height=dp(8))
         self.lbl_target = FLabel(text="", font_size="13sp", color=(1, 1, 1, 0.6))
@@ -142,7 +190,6 @@ class TasbihNoorApp(App):
         progress_box.add_widget(self.lbl_target)
         content_box.add_widget(progress_box)
         
-        # ۵. ردیف اول دکمه‌ها: پلاس یک و منهای یک (دقیقاً دو ستونه مانند تصویر اول شما)
         row1_box = BoxLayout(orientation='horizontal', spacing=dp(15), size_hint_y=None, height=dp(54))
         self.btn_minus = StyledBtn(text="-1", bg=(0.35, 0.25, 0.45, 1))
         self.btn_minus.bind(on_release=self.decrement_count)
@@ -152,7 +199,6 @@ class TasbihNoorApp(App):
         row1_box.add_widget(self.btn_plus)
         content_box.add_widget(row1_box)
         
-        # ۶. ردیف دوم دکمه‌ها: ریست و هدف
         row2_box = BoxLayout(orientation='horizontal', spacing=dp(15), size_hint_y=None, height=dp(54))
         self.btn_reset = StyledBtn(text="", bg=(0.7, 0.2, 0.2, 1))
         self.btn_reset.bind(on_release=self.reset_count)
@@ -161,15 +207,11 @@ class TasbihNoorApp(App):
         row2_box.add_widget(self.btn_target)
         content_box.add_widget(row2_box)
         
-        # فاصله خالی تا بخش پایین
         content_box.add_widget(BoxLayout(size_hint_y=0.1))
-        
-        # ۷. دکمه عریض بانک اذکار مشکل‌گشا
         self.btn_bank = StyledBtn(text="", bg=(0.45, 0.25, 0.8, 1), size_hint_y=None, height=dp(56))
         self.btn_bank.bind(on_release=lambda x: self.show_zekr_list())
         content_box.add_widget(self.btn_bank)
         
-        # ۸. کارت شیشه‌ای حمایت و کانال پایین صفحه شما
         support_card = GlassCard()
         self.lbl_support_title = FLabel(text="", font_size="13sp", color=(1, 1, 1, 0.5))
         self.lbl_support_action = FLabel(text="", font_size="16sp", bold=True, color=(1, 1, 1, 0.9))
@@ -245,7 +287,6 @@ class TasbihNoorApp(App):
         list_layout.bind(minimum_height=list_layout.setter('height'))
         popup = Popup(title=fa("انتخاب ذکر از بانک"), size_hint=(0.9, 0.7))
         
-        # فولدرها به صورت لیست منظم عریض داخل پاپ‌آپ
         for folder_name, _, zekrs in ZEKR_FOLDERS:
             lbl_f = FLabel(text=fa(f"--- {folder_name} ---"), font_size="15sp", color=(0.7, 0.6, 0.9, 1))
             list_layout.add_widget(lbl_f)

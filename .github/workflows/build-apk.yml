@@ -82,24 +82,22 @@ jobs:
       - name: Build APK
         run: |
           rm -rf bin/
-          yes | buildozer android release
+          # تغییر وضعیت بیلد به دباگ جهت تولید ساختار باینری امن و عدم دستکاری مخرب کدها
+          yes | buildozer android debug
         env:
           BUILDOZER_WARN_ON_ROOT: 0
-          BUILDOZER_ANDROID_KEYSTORE_PASS: ${{ secrets.KEYSTORE_PASS }}
-          BUILDOZER_ANDROID_KEYALIAS_PASS: ${{ secrets.KEY_PASS }}
 
-      - name: Patch debuggable flag
-        if: success()
+      - name: Prepare Final Directory
         run: |
           mkdir -p bin/final
-          APK=$(find bin -name "*-unsigned.apk" | sort -V | tail -1)
+          # پیدا کردن فایل APK تولید شده توسط بیلدوزر
+          APK=$(find bin -name "*.apk" | sort -V | tail -1)
           if [ -z "$APK" ]; then
-            echo "ERROR: No unsigned APK found to patch"
-            ls -la bin/
+            echo "ERROR: No APK found"
             exit 1
           fi
-          echo "Found unsigned APK: $APK"
-          python3 patch_debuggable.py "$APK" bin/final/patched-unsigned.apk
+          echo "Found APK for signing: $APK"
+          cp "$APK" bin/final/source-apk.apk
 
       - name: Sign APK
         if: success()
@@ -110,10 +108,12 @@ jobs:
           BUILD_TOOLS=$(find "$ANDROID_SDK_ROOT/build-tools" -maxdepth 1 -type d | sort -V | tail -1)
           echo "Using build-tools: $BUILD_TOOLS"
 
+          # هم‌تراز سازی پکت‌های فایل بدون پچ مخرب مانیفست
           "$BUILD_TOOLS/zipalign" -v -p 4 \
-            bin/final/patched-unsigned.apk \
+            bin/final/source-apk.apk \
             bin/final/aligned.apk
 
+          # امضای نهایی و رسمی فایل
           "$BUILD_TOOLS/apksigner" sign \
             --ks tasbih-releser.keystore \
             --ks-key-alias tasbih-key \

@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
 import json
-import webbrowser
 from datetime import datetime
 import arabic_reshaper
 
@@ -9,7 +8,7 @@ from kivy.app import App
 from kivy.clock import Clock
 from kivy.core.text import LabelBase
 from kivy.core.window import Window
-from kivy.graphics import Color, RoundedRectangle, Line, Ellipse, Rectangle
+from kivy.graphics import Color, RoundedRectangle, Line, Ellipse
 from kivy.metrics import dp
 from kivy.uix.image import Image
 from kivy.uix.floatlayout import FloatLayout
@@ -19,7 +18,6 @@ from kivy.uix.gridlayout import GridLayout
 from kivy.uix.label import Label
 from kivy.uix.popup import Popup
 from kivy.uix.scrollview import ScrollView
-from kivy.uix.textinput import TextInput
 from kivy.uix.progressbar import ProgressBar
 
 # --------------------------
@@ -45,8 +43,11 @@ FA_DIGITS = str.maketrans("0123456789", "۰۱۲۳۴۵۶۷۸۹")
 def fa(text):
     if text is None:
         return ""
-    reshaped_text = arabic_reshaper.reshape(str(text))
-    return reshaped_text[::-1]
+    try:
+        reshaped_text = arabic_reshaper.reshape(str(text))
+        return reshaped_text[::-1]
+    except Exception:
+        return str(text)
 
 def to_fa_num(s):
     return str(s).translate(FA_DIGITS)
@@ -68,9 +69,6 @@ def gregorian_to_jalali(gy, gm, gd):
     jd = 1 + (days % 31) if days < 186 else 1 + ((days - 186) % 30)
     return jy, jm, jd
 
-# --------------------------
-# اذکار آماده
-# --------------------------
 WEEKLY_ZEKR = {
     5: "یا رَبَّ الْعالَمین",
     6: "یا ذاالْجَلالِ وَ الْاِکْرام",
@@ -97,7 +95,7 @@ class StarIcon(IconBase):
             Color(0.95, 0.75, 0.15, 1)
             self.circle = Ellipse(pos=self.pos, size=self.size)
         self.bind(pos=self._upd, size=self._upd)
-        lbl = Label(text="★", font_size="22sp", color=(0.15, 0.1, 0.05, 1),
+        lbl = Label(text="*", font_size="22sp", color=(0.15, 0.1, 0.05, 1),
                     bold=True, pos_hint={'center_x': 0.5, 'center_y': 0.5})
         self.add_widget(lbl)
 
@@ -130,8 +128,6 @@ class LockIcon(IconBase):
             Color(0.25, 0.55, 0.95, 1)
             self.shackle = Ellipse(pos=(self.x+8, self.y+18), size=(20, 18))
             self.body = RoundedRectangle(pos=(self.x+4, self.y+4), size=(28, 22), radius=[dp(4)])
-            Color(0.1, 0.15, 0.3, 1)
-            self.hole = Ellipse(pos=(self.x+14, self.y+12), size=(8, 8))
         self.bind(pos=self._upd)
 
     def _upd(self, *args):
@@ -139,7 +135,6 @@ class LockIcon(IconBase):
         self.shackle.size = (20, 18)
         self.body.pos = (self.x+4, self.y+4)
         self.body.size = (28, 22)
-        self.hole.pos = (self.x+14, self.y+12)
 
 class BirdIcon(IconBase):
     def __init__(self, **kwargs):
@@ -147,15 +142,10 @@ class BirdIcon(IconBase):
         with self.canvas:
             Color(0.85, 0.4, 0.65, 1)
             self.body = Ellipse(pos=(self.x+10, self.y+10), size=(16, 14))
-            Color(1, 1, 1, 0.9)
-            self.wing1 = Line(points=[self.x+4, self.y+22, self.x+14, self.y+32, self.x+26, self.y+22], width=2.5)
-            self.wing2 = Line(points=[self.x+8, self.y+16, self.x+16, self.y+26, self.x+28, self.y+16], width=2)
         self.bind(pos=self._upd)
 
     def _upd(self, *args):
         self.body.pos = (self.x+10, self.y+10)
-        self.wing1.points = [self.x+4, self.y+22, self.x+14, self.y+32, self.x+26, self.y+22]
-        self.wing2.points = [self.x+8, self.y+16, self.x+16, self.y+26, self.x+28, self.y+16]
 
 ZEKR_FOLDERS = [
     ("صلوات", StarIcon, ["اَللّهُمَّ صَلِّ عَلی مُحَمَّد وَ آلِ مُحَمَّد", "اَللّهُمَّ صَلِّ عَلی مُحَمَّد", "صَلَّی اللهُ عَلَیهِ وَ آلِهِ"]),
@@ -164,9 +154,6 @@ ZEKR_FOLDERS = [
     ("آرامش قلب", BirdIcon, ["یا سلام", "یا لطیف", "یا صبور", "یا نور", "یا رؤوف"]),
 ]
 
-# --------------------------
-# ویجت‌های سفارشی
-# --------------------------
 class GlassCard(BoxLayout):
     def __init__(self, radius=20, **kwargs):
         super().__init__(**kwargs)
@@ -190,7 +177,7 @@ class GlassCard(BoxLayout):
 class StyledBtn(Button):
     def __init__(self, text="", bg=(0.15, 0.35, 0.85, 1), **kwargs):
         super().__init__(**kwargs)
-        self.text = fa(text)
+        self.text = text
         if FONT_NAME:
             self.font_name = FONT_NAME
         self.background_normal = ""
@@ -209,22 +196,18 @@ class StyledBtn(Button):
         self.rect.pos = self.pos
         self.rect.size = self.size
 
-    def set_text(self, t):
-        self.text = fa(t)
-
 class FLabel(Label):
     def __init__(self, text="", **kwargs):
         super().__init__(**kwargs)
         if FONT_NAME:
             self.font_name = FONT_NAME
-        self.text = fa(text)
+        self.text = text
 
 # --------------------------
-# کلاس اصلی اپلیکیشن
+# کلاس اصلی اپلیکیشن با لودر امن اندروید ۳۴
 # --------------------------
 class TasbihNoorApp(App):
     def build(self):
-        # آدرس‌دهی فوق امن برای حافظه اندروید ۳۴ جهت جلوگیری از کرش دیتابیس
         self.DATA_FILE = os.path.join(self.user_data_dir, "zekr_data.json")
         self.data = self.load_data()
         
@@ -235,27 +218,44 @@ class TasbihNoorApp(App):
         if os.path.exists(BANNER_FILE):
             self.main_layout.add_widget(Image(source=BANNER_FILE, size_hint_y=None, height=dp(140)))
         else:
-            self.main_layout.add_widget(FLabel(text="تسبیح نور", font_size="26sp", bold=True, size_hint_y=None, height=dp(50)))
+            self.title_lbl = FLabel(text="Tasbih Noor", font_size="26sp", bold=True, size_hint_y=None, height=dp(50))
+            self.main_layout.add_widget(self.title_lbl)
             
         self.time_card = GlassCard()
-        self.lbl_datetime = FLabel(text=fa("در حال بارگذاری ساعت..."), font_size="16sp")
+        self.lbl_datetime = FLabel(text="Loading...", font_size="16sp")
         self.time_card.add_widget(self.lbl_datetime)
         self.main_layout.add_widget(self.time_card)
         
-        # ترفند طلایی: استارت ساعت با تاخیر امن بعد از بالا آمدن کامل پنجره برنامه جهت رفع کرش
-        Clock.schedule_once(self.start_clock_securely, 1.5)
-
-        weekday_card = GlassCard()
-        current_day = datetime.now().weekday()
-        day_zekr = WEEKLY_ZEKR.get(current_day, "ذکر روز یافت نشد")
-        weekday_card.add_widget(FLabel(text="ذکر امروز هفته:", font_size="14sp", color=(0.7, 0.7, 0.9, 1)))
-        weekday_card.add_widget(FLabel(text=day_zekr, font_size="20sp", bold=True, color=(1, 0.85, 0.3, 1)))
-        self.main_layout.add_widget(weekday_card)
+        self.weekday_card = GlassCard()
+        self.lbl_week_title = FLabel(text="Zekr", font_size="14sp", color=(0.7, 0.7, 0.9, 1))
+        self.lbl_week_val = FLabel(text="...", font_size="20sp", bold=True, color=(1, 0.85, 0.3, 1))
+        self.weekday_card.add_widget(self.lbl_week_title)
+        self.weekday_card.add_widget(self.lbl_week_val)
+        self.main_layout.add_widget(self.weekday_card)
 
         self.counter_card = GlassCard()
-        self.lbl_count = FLabel(text=f"تعداد ذکر: {to_fa_num(self.data['count'])}", font_size="24sp", bold=True)
+        self.lbl_count = FLabel(text="Count: 0", font_size="24sp", bold=True)
         self.counter_card.add_widget(self.lbl_count)
         
         self.progress = ProgressBar(max=self.data['daily_target'], value=min(self.data['count'], self.data['daily_target']), size_hint_y=None, height=dp(15))
         self.counter_card.add_widget(self.progress)
         
+        self.lbl_target = FLabel(text="Target: 100", font_size="14sp", color=(0.6, 0.8, 0.6, 1))
+        self.counter_card.add_widget(self.lbl_target)
+        
+        btn_layout = BoxLayout(orientation='horizontal', spacing=dp(10), size_hint_y=None, height=dp(50))
+        self.btn_reset = StyledBtn(text="Reset", bg=(0.65, 0.2, 0.2, 1))
+        self.btn_reset.bind(on_release=self.reset_count)
+        self.btn_count = StyledBtn(text="Count", bg=(0.15, 0.55, 0.25, 1))
+        self.btn_count.bind(on_release=self.increment_count)
+        
+        btn_layout.add_widget(self.btn_reset)
+        btn_layout.add_widget(self.btn_count)
+        self.counter_card.add_widget(btn_layout)
+        self.main_layout.add_widget(self.counter_card)
+
+        self.folders_card = GlassCard()
+        self.lbl_bank_title = FLabel(text="Bank", font_size="16sp", bold=True, color=(0.9, 0.6, 0.9, 1))
+        self.folders_card.add_widget(self.lbl_bank_title)
+        
+        grid_folders = GridLayout(cols=2, spacing=dp(10), size_hint_y=None)

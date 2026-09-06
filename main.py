@@ -43,7 +43,7 @@ def fa(t):
     if not t: return ""
     try: 
         s = str(t)
-        if s.isdigit() or "/" in s or ":" in s or "@" in s:
+        if s.isdigit() or "/" in s or ":" in s:
             return s.translate(FA_DIGITS)
         return arabic_reshaper.reshape(s)[::-1]
     except: 
@@ -187,7 +187,8 @@ class TasbihNoorApp(App):
         header_box.add_widget(self.lbl_week_val)
         content_box.add_widget(header_box)
         
-        self.lbl_guide = FLabel(text="", font_size="22sp", color=(0.4, 0.9, 0.5, 1), size_hint_y=None, height=dp(45))
+        # افزایش ۲ شماره‌ای سایز متن ذکر اصلی صفحه به ۲۴اس‌پي جهت درشت‌نمایی عالی
+        self.lbl_guide = FLabel(text="", font_size="24sp", color=(0.4, 0.9, 0.5, 1), size_hint_y=None, height=dp(45))
         content_box.add_widget(self.lbl_guide)
         self.lbl_count = FLabel(text="0", font_size="77sp", bold=True, size_hint_y=None, height=dp(110))
         content_box.add_widget(self.lbl_count)
@@ -195,6 +196,8 @@ class TasbihNoorApp(App):
         progress_box = BoxLayout(orientation='vertical', size_hint_y=None, height=dp(35), spacing=dp(2))
         self.progress = ProgressBar(max=self.data['daily_target'], value=min(self.data['count'], self.data['daily_target']), size_hint_y=None, height=dp(8))
         self.lbl_target = FLabel(text="", font_size="13sp", color=(1, 1, 1, 0.6))
+        self.lbl_target.halign = 'right'
+        self.lbl_target.bind(size=self.lbl_target.setter('text_size'))
         progress_box.add_widget(self.progress)
         progress_box.add_widget(self.lbl_target)
         content_box.add_widget(progress_box)
@@ -222,6 +225,7 @@ class TasbihNoorApp(App):
         self.btn_bank.bind(on_release=lambda x: self.show_zekr_list())
         content_box.add_widget(self.btn_bank)
         
+        # جایگذاری دکمه حمایت و کانال بله دقیقاً زیر دکمه بانک اذکار با تراز بومی و رفع خطوط گسسته
         self.support_btn = Button(background_normal="", background_color=(0,0,0,0), size_hint_y=None, height=dp(60))
         self.support_btn.bind(on_release=self.open_ble_channel)
         support_card = GlassCard()
@@ -233,8 +237,8 @@ class TasbihNoorApp(App):
         
         support_card.bind(pos=lambda obj, pos: setattr(self.support_btn, 'pos', pos))
         support_card.bind(size=lambda obj, size: setattr(self.support_btn, 'size', size))
-        
         content_box.add_widget(self.support_btn)
+        
         self.root_layout.add_widget(content_box)
         Clock.schedule_once(self.secure_persian_injection, 0.4)
         return self.root_layout
@@ -245,11 +249,11 @@ class TasbihNoorApp(App):
             current_day = datetime.now().weekday()
             self.lbl_week_val.text = fa(WEEKLY_ZEKR.get(current_day, ""))
             self.lbl_count.text = to_fa_num(self.data['count'])
-            self.lbl_target.text = fa("هدف") + " : " + to_fa_num(self.data['daily_target'])
+            self.lbl_target.text = to_fa_num(self.data['daily_target']) + " : " + fa("هدف روزانه")
             self.btn_reset.text = fa("ریست")
             self.btn_target.text = fa("هدف")
             self.btn_bank.text = fa("بانک اذکار مشکل‌گشا")
-            self.lbl_support_title.text = fa("لطفا از ما حمایت کنید")
+            self.lbl_support_title.text = fa("لطفاً از ما حمایت کنید")
             self.lbl_support_action.text = fa("امتیاز دادن / عضویت در کانال بله")
         except: pass
         Clock.schedule_interval(self.update_clock, 1)
@@ -313,7 +317,7 @@ class TasbihNoorApp(App):
                 self.data['daily_target'] = val
                 self.progress.max = val
                 self.progress.value = min(self.data['count'], val)
-                self.lbl_target.text = fa("هدف") + " : " + to_fa_num(val)
+                self.lbl_target.text = to_fa_num(val) + " : " + fa("هدف روزانه")
                 self.save_data()
         except: pass
         popup.dismiss()
@@ -342,7 +346,7 @@ class TasbihNoorApp(App):
         content.add_widget(scroll)
         btn_close = StyledBtn(text=fa("بستن"), bg=(0.5, 0.5, 0.5, 1))
         btn_close.bind(on_release=popup.dismiss)
-        content.add_widget(content_box) # Failsafe placeholder if needed, otherwise ignored
+        content.add_widget(btn_close)
         popup.content = content
         popup.open()
 

@@ -43,7 +43,6 @@ def fa(t):
     if not t: return ""
     try: 
         s = str(t)
-        # رفع ارور برعکس شدن زمان و ممیزها
         if s.isdigit() or "/" in s or ":" in s or "@" in s:
             return s.translate(FA_DIGITS)
         return arabic_reshaper.reshape(s)[::-1]
@@ -72,7 +71,7 @@ def gregorian_to_jalali(gy, gm, gd):
 WEEKLY_ZEKR = {
     5: "یا رَبَّ الْعالَمین", 6: "یا ذاالْجَلالِ وَ الْاِکْرام", 0: "یا قاضِیَ الْحاجات",
     1: "یا اَرْحَمَ الرّاحِمین", 2: "یا حَیُّ یا قَیّوُم",
-    3: "لا اِلهَ اِلّا اللهُ الْمَلِکُ الْحَقُّ الْمُجمعین", 4: "اَللّهُمَّ صَلِّ عَلی مُحَمَّد وَ آلِ مُحَمَّد"
+    3: "لا اِلهَ اِلّا اللهُ الْمَلِکُ الْحَقُّ الْمُبین", 4: "اَللّهُمَّ صَلِّ عَلی مُحَمَّد وَ آلِ مُحَمَّد"
 }
 
 class IconBase(FloatLayout):
@@ -223,7 +222,6 @@ class TasbihNoorApp(App):
         self.btn_bank.bind(on_release=lambda x: self.show_zekr_list())
         content_box.add_widget(self.btn_bank)
         
-        # دکمه حمایت و کانال بله اورجینال شما با اتصال قطعی به آیدی کانال بله تسبیح نور
         self.support_btn = Button(background_normal="", background_color=(0,0,0,0), size_hint_y=None, height=dp(60))
         self.support_btn.bind(on_release=self.open_ble_channel)
         support_card = GlassCard()
@@ -247,12 +245,12 @@ class TasbihNoorApp(App):
             current_day = datetime.now().weekday()
             self.lbl_week_val.text = fa(WEEKLY_ZEKR.get(current_day, ""))
             self.lbl_count.text = to_fa_num(self.data['count'])
-            self.lbl_target.text = fa(f"هدف: {to_fa_num(self.data['daily_target'])}")
+            self.lbl_target.text = fa("هدف") + " : " + to_fa_num(self.data['daily_target'])
             self.btn_reset.text = fa("ریست")
             self.btn_target.text = fa("هدف")
             self.btn_bank.text = fa("بانک اذکار مشکل‌گشا")
             self.lbl_support_title.text = fa("لطفا از ما حمایت کنید")
-            self.lbl_support_action.text = fa("امتیاز دادن / عضویت در کانال @zekarnoor")
+            self.lbl_support_action.text = fa("امتیاز دادن / عضویت در کانال بله")
         except: pass
         Clock.schedule_interval(self.update_clock, 1)
         self.update_clock(0)
@@ -315,7 +313,7 @@ class TasbihNoorApp(App):
                 self.data['daily_target'] = val
                 self.progress.max = val
                 self.progress.value = min(self.data['count'], val)
-                self.lbl_target.text = fa(f"هدف: {to_fa_num(val)}")
+                self.lbl_target.text = fa("هدف") + " : " + to_fa_num(val)
                 self.save_data()
         except: pass
         popup.dismiss()
@@ -344,7 +342,7 @@ class TasbihNoorApp(App):
         content.add_widget(scroll)
         btn_close = StyledBtn(text=fa("بستن"), bg=(0.5, 0.5, 0.5, 1))
         btn_close.bind(on_release=popup.dismiss)
-        content.add_widget(btn_close)
+        content.add_widget(content_box) # Failsafe placeholder if needed, otherwise ignored
         popup.content = content
         popup.open()
 

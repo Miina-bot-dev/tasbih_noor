@@ -41,23 +41,24 @@ FA_DIGITS = str.maketrans("0123456789", "۰۱۲۳۴۵۶۷۸۹")
 
 def fa(t):
     if not t: return ""
-    try: return arabic_reshaper.reshape(str(t))[::-1]
-    except: return str(t)
+    try: 
+        s = str(t)
+        # رفع ارور برعکس شدن زمان و ممیزها
+        if s.isdigit() or "/" in s or ":" in s or "@" in s:
+            return s.translate(FA_DIGITS)
+        return arabic_reshaper.reshape(s)[::-1]
+    except: 
+        return str(t).translate(FA_DIGITS)
 
-def to_fa_num(s): return str(s).translate(FA_DIGITS)
+def to_fa_num(s): 
+    return str(s).translate(FA_DIGITS)
 
 def gregorian_to_jalali(gy, gm, gd):
-    jy = gy - 1600 if gy > 1600 else gy
-    jy = 979 + 33 * (jy // 33) + 4 * (jy % 33 // 4)
-    days = gy * 365 + (gy + 3) // 4 - (gy + 99) // 100 + (gy + 399) // 400 - 584442 + gd
-    for i in range(1, gm):
-        if i == 1 or i == 3 or i == 5 or i == 7 or i == 8 or i == 10 or i == 12:
-            days += 31
-        elif i == 4 or i == 6 or i == 9 or i == 11:
-            days += 30
-        else:
-            if (gy % 4 == 0 and gy % 100 != 0) or (gy % 400 == 0): days += 29
-            else: days += 28
+    g_d_m = (0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334)
+    jy = 979 if gy > 1600 else 0
+    gy -= 1600 if gy > 1600 else 621
+    gy2 = gy + 1 if gm > 2 else gy
+    days = (365 * gy) + ((gy2 + 3) // 4) - ((gy2 + 99) // 100) + ((gy2 + 399) // 400) - 80 + gd + g_d_m[gm - 1]
     jy += 33 * (days // 12053)
     days %= 12053
     jy += 4 * (days // 1461)
@@ -71,7 +72,7 @@ def gregorian_to_jalali(gy, gm, gd):
 WEEKLY_ZEKR = {
     5: "یا رَبَّ الْعالَمین", 6: "یا ذاالْجَلالِ وَ الْاِکْرام", 0: "یا قاضِیَ الْحاجات",
     1: "یا اَرْحَمَ الرّاحِمین", 2: "یا حَیُّ یا قَیّوُم",
-    3: "لا اِلهَ اِلّا اللهُ الْمَلِکُ الْحَقُّ الْمُبین", 4: "اَللّهُمَّ صَلِّ عَلی مُحَمَّد وَ آلِ مُحَمَّد"
+    3: "لا اِلهَ اِلّا اللهُ الْمَلِکُ الْحَقُّ الْمُجمعین", 4: "اَللّهُمَّ صَلِّ عَلی مُحَمَّد وَ آلِ مُحَمَّد"
 }
 
 class IconBase(FloatLayout):
@@ -222,6 +223,7 @@ class TasbihNoorApp(App):
         self.btn_bank.bind(on_release=lambda x: self.show_zekr_list())
         content_box.add_widget(self.btn_bank)
         
+        # دکمه حمایت و کانال بله اورجینال شما با اتصال قطعی به آیدی کانال بله تسبیح نور
         self.support_btn = Button(background_normal="", background_color=(0,0,0,0), size_hint_y=None, height=dp(60))
         self.support_btn.bind(on_release=self.open_ble_channel)
         support_card = GlassCard()
@@ -250,7 +252,7 @@ class TasbihNoorApp(App):
             self.btn_target.text = fa("هدف")
             self.btn_bank.text = fa("بانک اذکار مشکل‌گشا")
             self.lbl_support_title.text = fa("لطفا از ما حمایت کنید")
-            self.lbl_support_action.text = fa("عضویت در کانال بله / امتیاز")
+            self.lbl_support_action.text = fa("امتیاز دادن / عضویت در کانال @zekarnoor")
         except: pass
         Clock.schedule_interval(self.update_clock, 1)
         self.update_clock(0)

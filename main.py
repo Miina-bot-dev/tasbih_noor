@@ -43,7 +43,7 @@ def fa(t):
     if not t: return ""
     try: 
         s = str(t)
-        if s.isdigit() or "/" in s or ":" in s:
+        if s.isdigit() or "/" in s or ":" in s or "@" in s:
             return s.translate(FA_DIGITS)
         return arabic_reshaper.reshape(s)[::-1]
     except: 
@@ -187,7 +187,6 @@ class TasbihNoorApp(App):
         header_box.add_widget(self.lbl_week_val)
         content_box.add_widget(header_box)
         
-        # افزایش ۲ شماره‌ای سایز متن ذکر اصلی صفحه به ۲۴اس‌پي جهت درشت‌نمایی عالی
         self.lbl_guide = FLabel(text="", font_size="24sp", color=(0.4, 0.9, 0.5, 1), size_hint_y=None, height=dp(45))
         content_box.add_widget(self.lbl_guide)
         self.lbl_count = FLabel(text="0", font_size="77sp", bold=True, size_hint_y=None, height=dp(110))
@@ -220,12 +219,10 @@ class TasbihNoorApp(App):
         row2_box.add_widget(self.btn_target)
         content_box.add_widget(row2_box)
         
-        content_box.add_widget(BoxLayout(size_hint_y=0.1))
         self.btn_bank = StyledBtn(text="", bg=(0.45, 0.25, 0.8, 1), size_hint_y=None, height=dp(56))
         self.btn_bank.bind(on_release=lambda x: self.show_zekr_list())
         content_box.add_widget(self.btn_bank)
         
-        # جایگذاری دکمه حمایت و کانال بله دقیقاً زیر دکمه بانک اذکار با تراز بومی و رفع خطوط گسسته
         self.support_btn = Button(background_normal="", background_color=(0,0,0,0), size_hint_y=None, height=dp(60))
         self.support_btn.bind(on_release=self.open_ble_channel)
         support_card = GlassCard()

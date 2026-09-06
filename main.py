@@ -124,7 +124,8 @@ class StyledBtn(Button):
 class FLabel(Label):
     def __init__(self, text="", **kw):
         super().__init__(**kw); self.text = text; self.halign, self.valign = 'center', 'middle'
- class TasbihNoorApp(App):
+        if FONT_NAME: self.font_name = FONT_NAME
+class TasbihNoorApp(App):
     def build(self):
         self.DATA_FILE = os.path.join(self.user_data_dir, "zekr_data.json")
         self.data = self.load_data(); self.root_layout = FloatLayout()
@@ -132,17 +133,14 @@ class FLabel(Label):
             self.root_layout.add_widget(Image(source=BACKGROUND_FILE, allow_stretch=True, keep_ratio=False, size_hint=(1, 1)))
         
         content_box = BoxLayout(orientation='vertical', padding=dp(20), spacing=dp(12), size_hint=(1, 1))
-        
-        # ۱. هدر بالا (ساعت، تاریخ و ذکر هفته) تغییر به چسبیده به سقف
         header_box = BoxLayout(orientation='horizontal', size_hint_y=None, height=dp(50))
         self.lbl_datetime = FLabel(text="", font_size="14sp", size_hint_x=0.4, color=(1, 1, 1, 0.7))
         self.lbl_week_val = FLabel(text="", font_size="14sp", size_hint_x=0.6, bold=True, color=(1, 0.9, 0.5, 1))
         header_box.add_widget(self.lbl_datetime); header_box.add_widget(self.lbl_week_val); content_box.add_widget(header_box)
         
-        # ترفند طلایی: استفاده از سایز هینت منعطف برای خالی ماندن بخش وسط (تصویر ماه و مناره‌ها)
+        # لایه نگه‌دارنده برای باز ماندن کامل فضای ماه و مسجد در وسط برنامه
         content_box.add_widget(BoxLayout(size_hint_y=0.7))
         
-        # ۲. متن راهنما و عدد شمارنده (منتقل شده به بخش پایینی بالای دکمه‌ها)
         self.lbl_guide = FLabel(text="", font_size="24sp", color=(0.4, 0.9, 0.5, 1), size_hint_y=None, height=dp(35))
         content_box.add_widget(self.lbl_guide)
         self.lbl_count = FLabel(text="0", font_size="77sp", bold=True, size_hint_y=None, height=dp(95))
@@ -258,5 +256,5 @@ class FLabel(Label):
 
     def select_zekr(self, zekr_text, popup): popup.dismiss(); self.reset_count(None); self.lbl_guide.text = fa(zekr_text)
 
-if __name__ == "__main__": TasbihNoorApp().run()
-       if FONT_NAME: self.font_name = FONT_NAME
+if __name__ == "__main__":
+    TasbihNoorApp().run()

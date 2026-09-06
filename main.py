@@ -133,14 +133,14 @@ class TasbihNoorApp(App):
             self.root_layout.add_widget(Image(source=BACKGROUND_FILE, allow_stretch=True, keep_ratio=False, size_hint=(1, 1)))
         
         content_box = BoxLayout(orientation='vertical', padding=dp(20), spacing=dp(12), size_hint=(1, 1))
+        
+        # هدر ساعت و تاریخ در بالاترین بخش
         header_box = BoxLayout(orientation='horizontal', size_hint_y=None, height=dp(50))
         self.lbl_datetime = FLabel(text="", font_size="14sp", size_hint_x=0.4, color=(1, 1, 1, 0.7))
         self.lbl_week_val = FLabel(text="", font_size="14sp", size_hint_x=0.6, bold=True, color=(1, 0.9, 0.5, 1))
         header_box.add_widget(self.lbl_datetime); header_box.add_widget(self.lbl_week_val); content_box.add_widget(header_box)
         
-        # لایه نگه‌دارنده برای باز ماندن کامل فضای ماه و مسجد در وسط برنامه
-        content_box.add_widget(BoxLayout(size_hint_y=0.7))
-        
+        # لایه ذکرشمار چسبیده به بالای صفحه (دقیقاً زیر هدر ساعت)
         self.lbl_guide = FLabel(text="", font_size="24sp", color=(0.4, 0.9, 0.5, 1), size_hint_y=None, height=dp(35))
         content_box.add_widget(self.lbl_guide)
         self.lbl_count = FLabel(text="0", font_size="77sp", bold=True, size_hint_y=None, height=dp(95))
@@ -162,10 +162,14 @@ class TasbihNoorApp(App):
         self.btn_target = StyledBtn(text="", bg=(0.1, 0.55, 0.3, 1)); self.btn_target.bind(on_release=self.popup_set_target)
         row2_box.add_widget(self.btn_reset); row2_box.add_widget(self.btn_target); content_box.add_widget(row2_box)
         
+        # لایه خالی وسط صفحه برای باز ماندن فضای ماه و مناره‌ها (بین ذکرشمار و بانک اذکار)
+        content_box.add_widget(BoxLayout(size_hint_y=0.7))
+        
+        # لایه پایین صفحه: بانک اذکار و دقیقاً زیر آن کادر حمایت چسبیده
         self.btn_bank = StyledBtn(text="", bg=(0.45, 0.25, 0.8, 1), size_hint_y=None, height=dp(54))
         self.btn_bank.bind(on_release=lambda x: self.show_zekr_list()); content_box.add_widget(self.btn_bank)
         
-        self.support_btn = Button(background_normal="", background_color=(0,0,0,0), size_hint_y=None, height=dp(56))
+        self.support_btn = Button(background_normal="", background_color=(0,0,0,0), size_hint_y=None, height=dp(60))
         self.support_btn.bind(on_release=self.open_ble_channel); support_card = GlassCard()
         self.lbl_support_title = FLabel(text="", font_size="12sp", color=(1, 1, 1, 0.5))
         self.lbl_support_action = FLabel(text="", font_size="15sp", bold=True, color=(1, 1, 1, 0.9))
@@ -185,8 +189,9 @@ class TasbihNoorApp(App):
             self.lbl_count.text = to_fa_num(self.data['count'])
             self.lbl_target.text = to_fa_num(self.data['daily_target']) + " : " + fa("هدف روزانه")
             self.btn_reset.text = fa("ریست"); self.btn_target.text = fa("هدف"); self.btn_bank.text = fa("بانک اذکار مشکل‌گشا")
-            self.lbl_support_title.text = fa("لطفاً از ما حمایت کنید")
-            self.lbl_support_action.text = fa("امتیاز دادن / عضویت در کانال بله")
+            self.lbl_support_title.text = fa("حمایت از ما")
+            # رفع گسستگی کامل حروف با حذف کاراکترهای مزاحم انگلیسی و علائم
+            self.lbl_support_action.text = fa("امتیاز دادن یا عضویت در کانال")
         except: pass
         Clock.schedule_interval(self.update_clock, 1); self.update_clock(0)
 

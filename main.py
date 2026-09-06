@@ -126,7 +126,7 @@ class BirdIcon(IconBase):
     def _upd(self, *args): self.body.pos, self.body.size = (self.x+10, self.y+10), (16, 14)
 
 ZEKR_FOLDERS = (
-    ("صلوات", StarIcon if 'StarIcon' in locals() else FloatLayout, ("اَللّهُمَّ صَلِّ عَلی مُحَمَّد وَ آلِ مُحَمَّد", "اَللّهُمَّ صَلِّ عَلی مُحَمَّد", "صَلَّی static_folderُ عَلَیهِ وَ آلِهِ")),
+    ("صلوات", StarIcon if 'StarIcon' in locals() else FloatLayout, ("اَللّهُمَّ صَلِّ عَلی مُحَمَّد وَ آلِ مُحَمَّد", "اَللّهُمَّ صَلِّ عَلی مُحَمَّد", "صَلَّی اللهُ عَلَیهِ وَ آلِهِ")),
     ("رزق و روزی", CoinIcon if 'CoinIcon' in locals() else FloatLayout, ("یا رزاق", "یا غنی", "یا واسع", "یا فتاح", "استغفرالله")),
     ("گشایش مشکلات", LockIcon if 'LockIcon' in locals() else FloatLayout, ("یا فتاح", "یا کاشف الکرب", "یا مجیب", "یا قاضی الحاجات")),
     ("آرامش قلب", BirdIcon if 'BirdIcon' in locals() else FloatLayout, ("یا سلام", "یا لطیف", "یا صبور", "یا نور", "یا رؤوف"))
@@ -168,6 +168,7 @@ class FLabel(Label):
         if FONT_NAME: self.font_name = FONT_NAME
         self.text = text
         self.halign = 'center'
+        self.valign = 'middle'
 class TasbihNoorApp(App):
     def build(self):
         self.DATA_FILE = os.path.join(self.user_data_dir, "zekr_data.json")
@@ -210,12 +211,11 @@ class TasbihNoorApp(App):
         self.btn_bank = StyledBtn(text="", bg=(0.45, 0.25, 0.8, 1), size_hint_y=None, height=dp(54))
         self.btn_bank.bind(on_release=lambda x: self.show_zekr_list()); content_box.add_widget(self.btn_bank)
         
-        # 🎯 راهکار طلایی و رسمی: ساخت دکمه شیشه‌ای دوم دقیقاً با همان کلاس کادر کدهای خودتان
-        # ارتفاع آن را ۶۵dp گذاشتم تا دو خط متن به زیبایی درونش جا شوند
+        # 🎯 اصلاح نهایی تراز دکمه حمایت دقیقاً مو به مو بر اساس کادر بانک اذکار شما
         self.support_btn = StyledBtn(text="", bg=(1, 1, 1, 0.05), size_hint_y=None, height=dp(65))
         self.support_btn.bind(on_release=self.open_ble_channel)
         
-        # استفاده از کاراکتر خط جدید (\n) برای نمایش دو خط متن کاملاً چسبیده و تراز وسط دقیقاً مثل عکس شما
+        # نمایش کاملاً پیوسته و تراز وسط دو خط متن بدون حروف جدا جدا
         self.support_btn.text = fa("لطفا از ما حمایت کنید") + "\n" + fa("امتیاز دادن / عضویت در کانال")
         content_box.add_widget(self.support_btn)
         
@@ -301,4 +301,3 @@ class TasbihNoorApp(App):
 
 if __name__ == "__main__":
     TasbihNoorApp().run()
-        self.valign = 'middle'

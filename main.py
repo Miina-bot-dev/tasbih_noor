@@ -74,6 +74,7 @@ WEEKLY_ZEKR = {
     1: "یا اَرْحَمَ الرّاحِمین", 2: "یا حَیُّ یا قَیّوُم",
     3: "لا اِلهَ اِلّا اللهُ الْمَلِکُ الْحَقُّ الْمُبین", 4: "اَللّهُمَّ صَلِّ عَلی مُحَمَّد وَ آلِ مُحَمَّد"
 }
+
 class IconBase(FloatLayout):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -131,7 +132,6 @@ ZEKR_FOLDERS = (
     ("گشایش مشکلات", LockIcon if 'LockIcon' in locals() else FloatLayout, ("یا فتاح", "یا کاشف الکرب", "یا مجیب", "یا قاضی الحاجات")),
     ("آرامش قلب", BirdIcon if 'BirdIcon' in locals() else FloatLayout, ("یا سلام", "یا لطیف", "یا صبور", "یا نور", "یا رؤوف"))
 )
-
 class GlassCard(BoxLayout):
     def __init__(self, radius=20, **kw):
         super().__init__(**kw)
@@ -179,6 +179,7 @@ class TasbihNoorApp(App):
         return {}
 
     def open_ble_channel(self, instance):
+        # باز کردن مستقیم آیدی zekarnoor در خود برنامه بله بدون واسطه مرورگر
         try:
             webbrowser.open("bale://channel?name=zekarnoor")
         except:
@@ -204,32 +205,30 @@ class TasbihNoorApp(App):
         self.lbl_guide = FLabel(text="", font_size="24sp", color=(0.4, 0.9, 0.5, 1), size_hint_y=None, height=dp(35))
         content_box.add_widget(self.lbl_guide)
 
-        # -------------------------------------------------------------
-        # دکمه بانک ذکر و تنظیم دکمه حمایت راست‌چین و درشت بدون تداخل فضا
-        # -------------------------------------------------------------
         self.btn_bank = StyledBtn(text=fa("بانک ذکر"), bg=(0.45, 0.25, 0.8, 1))
         self.btn_bank.bind(on_release=lambda x: self.show_zekr_list())
         content_box.add_widget(self.btn_bank)
 
+        # دکمه حمایت راست‌چین واقعی با سایز بزرگ ۳۰ دلخواه شما بدون اشغال کل صفحه
         self.support_btn = Button(
             text=fa("لطفا از ما حمایت کنید") + "\n" + fa("امتیاز دادن و عضویت در کانال بله"),
             font_name="Vazir",
-            font_size=20,          # افزایش سایز فونت به ۲۰ برای درشت و خوانا بودن عالی
-            halign="right",        # راست‌چین شدن کامل متن
+            font_size=30,          # سایز ۳0 درشت دقیقاً طبق سلیقه شما
+            halign="right",        # متمایل شدن واقعی متن به سمت راست
             valign="middle",
             padding=(dp(15), 0),
             background_normal="",
             background_color=(0.15, 0.35, 0.85, 0.4),
-            size_hint=(1, None),   # جلوگیری از اشغال کل صفحه جهت بازگشت ساعت و هدف روزانه
-            height=dp(60)          # افزایش ارتفاع دکمه متناسب با سایز فونت بزرگ جدید
+            size_hint=(1, None),   # این دستور تضمین می‌کند دکمه کوچک بماند تا ساعت و هدف پنهان نشوند
+            height=dp(75)          # ارتفاع دکمه افزایش یافت تا متن بزرگ ۳0 کاملاً در آن جا شود
         )
-        self.support_btn.bind(size=lambda s, w: setattr(s, 'text_size', w))
+        self.support_btn.bind(size=lambda s, w: setattr(s, 'text_size', (w, None)))
         self.support_btn.bind(on_press=self.open_ble_channel)
         content_box.add_widget(self.support_btn)
         
         self.root_layout.add_widget(content_box)
         
-        # استارت مجدد تایمر ساعت و تاریخ غیب شده شما
+        # استارت مجدد و قطعی تایمر ساعت، تاریخ، هدف و ریست
         Clock.schedule_interval(self.update_clock, 1)
         self.update_clock(0)
         

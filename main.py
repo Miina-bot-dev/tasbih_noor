@@ -211,33 +211,28 @@ class TasbihNoorApp(App):
         self.btn_bank.bind(on_release=lambda x: self.show_zekr_list()); content_box.add_widget(self.btn_bank)
 
         # -------------------------------------------------------------
-        # بخش اصلاح شده: دکمه حمایت و کانال بله با راست‌چین واقعی و متن یکپارچه
+        # دکمه حمایت با فونت درشت و تراز اصلاح شده بدون آسیب به بقیه اجزا
         # -------------------------------------------------------------
         self.support_btn = Button(
             text=fa("لطفا از ما حمایت کنید") + "\n" + fa("امتیاز دادن و عضویت در کانال بله"),
             font_name="Vazir",
             font_size=18,
-            halign="right",        # متمایل کردن متن به سمت راست
+            halign="right",
             valign="middle",
-            padding=(dp(25), 0),   # ایجاد فاصله ایمن از لبه سمت راست دکمه
-            background_normal="",   # حذف رنگ سبز پیش‌فرض برای اعمال رنگ دلخواه
-            background_color=(0.15, 0.35, 0.85, 0.4), # رنگ هماهنگ با قالب برنامه شما
-            size_hint_y=None,
-            height=dp(65)
+            padding=(dp(15), 0),
+            background_normal="",
+            background_color=(0.15, 0.35, 0.85, 0.4),
+            size_hint=(1, None),
+            height=dp(55)
         )
         
-        # تراز کردن ابعاد متن برای فعال شدن halign به سمت راست
-        self.support_btn.bind(size=lambda s, w: setattr(s, 'text_size', (w[0], w[1])))
+        # اصلاح تراز متن برای راست‌چین شدن واقعی
+        self.support_btn.bind(size=lambda s, w: setattr(s, 'text_size', w))
         self.support_btn.bind(on_press=self.open_ble_channel)
-        content_box.add_widget(self.support_btn)
-        
+        content_box.add_widget(self.support_btn)  
         self.root_layout.add_widget(content_box)
         return self.root_layout
-    def secure_persian_injection(self, dt):
-        try:
-            self.lbl_guide.text = fa("ذکر خود را انتخاب کنید")
-            self.lbl_week_val.text = fa(WEEKLY_ZEKR.get(datetime.now().weekday(), ""))
-            self.lbl_count.text = to_fa_num(self.data['count'])
+
             self.lbl_target.text = to_fa_num(self.data['daily_target']) + " : " + fa("هدف روزانه")
             self.btn_reset.text = fa("ریست"); self.btn_target.text = fa("هدف"); self.btn_bank.text = fa("بانک اذکار مشکل‌گشا")
         except: pass

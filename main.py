@@ -207,22 +207,32 @@ class TasbihNoorApp(App):
         row2_box.add_widget(self.btn_reset); row2_box.add_widget(self.btn_target); content_box.add_widget(row2_box)
         
         content_box.add_widget(BoxLayout(size_hint_y=0.7))
-        
-        self.btn_bank = StyledBtn(text="", bg=(0.45, 0.25, 0.8, 1), size_hint_y=None, height=dp(54))
+        self.btn_bank = StyledBtn(text=fa("بانک ذکر"), bg=(0.45, 0.25, 0.8, 1))
         self.btn_bank.bind(on_release=lambda x: self.show_zekr_list()); content_box.add_widget(self.btn_bank)
+
+        # -------------------------------------------------------------
+        # بخش اصلاح شده: دکمه حمایت و کانال بله با راست‌چین واقعی و متن یکپارچه
+        # -------------------------------------------------------------
+        self.support_btn = Button(
+            text=fa("لطفا از ما حمایت کنید") + "\n" + fa("امتیاز دادن و عضویت در کانال بله"),
+            font_name="Vazir",
+            font_size=18,
+            halign="right",        # متمایل کردن متن به سمت راست
+            valign="middle",
+            padding=(dp(25), 0),   # ایجاد فاصله ایمن از لبه سمت راست دکمه
+            background_normal="",   # حذف رنگ سبز پیش‌فرض برای اعمال رنگ دلخواه
+            background_color=(0.15, 0.35, 0.85, 0.4), # رنگ هماهنگ با قالب برنامه شما
+            size_hint_y=None,
+            height=dp(65)
+        )
         
-        # 🎯 اصلاح نهایی تراز دکمه حمایت دقیقاً مو به مو بر اساس کادر بانک اذکار شما
-        self.support_btn = StyledBtn(text="", bg=(1, 1, 1, 0.05), size_hint_y=None, height=dp(65))
-        self.support_btn.bind(on_release=self.open_ble_channel)
-        
-        # نمایش کاملاً پیوسته و تراز وسط دو خط متن بدون حروف جدا جدا
-        self.support_btn.text = fa("لطفا از ما حمایت کنید") + "\n" + fa("امتیاز دادن / عضویت در کانال")
+        # تراز کردن ابعاد متن برای فعال شدن halign به سمت راست
+        self.support_btn.bind(size=lambda s, w: setattr(s, 'text_size', (w[0], w[1])))
+        self.support_btn.bind(on_press=self.open_ble_channel)
         content_box.add_widget(self.support_btn)
         
         self.root_layout.add_widget(content_box)
-        Clock.schedule_once(self.secure_persian_injection, 0.4)
         return self.root_layout
-
     def secure_persian_injection(self, dt):
         try:
             self.lbl_guide.text = fa("ذکر خود را انتخاب کنید")

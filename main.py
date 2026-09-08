@@ -1,186 +1,233 @@
 # -*- coding: utf-8 -*-
-import os, json, webbrowser, arabic_reshaper
+import os
+import json
 from datetime import datetime
+import webbrowser
+import arabic_reshaper
+
 from kivy.app import App
+from kivy.clock import Clock
 from kivy.core.text import LabelBase
 from kivy.core.window import Window
+from kivy.graphics import Color, RoundedRectangle, Line, Ellipse
+from kivy.metrics import dp
+from kivy.uix.image import Image
 from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
+from kivy.uix.gridlayout import GridLayout
 from kivy.uix.label import Label
 from kivy.uix.popup import Popup
+from kivy.uix.scrollview import ScrollView
 from kivy.uix.progressbar import ProgressBar
 from kivy.uix.textinput import TextInput
-from kivy.uix.scrollview import ScrollView
-from kivy.metrics import dp
 
-Window.clearcolor = (0.05, 0.05, 0.1, 1)
+# --------------------------
+# تنظیمات پایه و گرافیکی اصلی شما
+# --------------------------
+Window.clearcolor = (0.1, 0.04, 0.18, 1)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__)) if '__file__' in locals() else '.'
 FONT_FILE = os.path.join(BASE_DIR, "Vazirmatn-Regular.ttf")
-FONT_NAME = "Vazir" if os.path.exists(FONT_FILE) else None
-if FONT_NAME:
-    try: LabelBase.register(name="Vazir", fn_regular=FONT_FILE)
+BACKGROUND_FILE = os.path.join(BASE_DIR, "main_banner.png")
+
+if os.path.exists(FONT_FILE):
+    try:
+        LabelBase.register(name="Vazir", fn_regular=FONT_FILE)
+        FONT_NAME = "Vazir"
     except: FONT_NAME = None
+else: FONT_NAME = None
 
 FA_DIGITS = str.maketrans("0123456789", "۰۱۲۳۴۵۶۷۸۹")
+
 def fa(t):
     if not t: return ""
-    try:
+    try: 
         s = str(t)
-        if s.isdigit() or "/" in s or ":" in s: return s.translate(FA_DIGITS)
+        if s.isdigit() or "/" in s or ":" in s:
+            return s.translate(FA_DIGITS)
         return arabic_reshaper.reshape(s)[::-1]
-    except: return str(t).translate(FA_DIGITS)
+    except: 
+        return str(t).translate(FA_DIGITS)
+
+def to_fa_num(s): 
+    return str(s).translate(FA_DIGITS)
 
 def gregorian_to_jalali(gy, gm, gd):
-    try:
-        g_d_m = (0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334)
-        jy = 979 if gy > 1600 else 0
-        gy -= 1600 if gy > 1600 else 621
-        gy2 = gy + 1 if gm > 2 else gy
-        days = (365 * gy) + ((gy2 + 3) // 4) - ((gy2 + 99) // 100) + ((gy2 + 399) // 400) - 80 + gd + g_d_m[gm - 1]
-        jy += 33 * (days // 12053)
-        days %= 12053
-        jy += 4 * (days // 1461)
-        days %= 1461
-        if days > 365:
-            jy += (days - 1) // 365
-            days = (days - 1) % 365
-        return jy, 1 + (days // 31) if days < 186 else 7 + ((days - 186) // 30), 1 + (days % 31) if days < 186 else 1 + ((days - 186) % 30)
-    except: return 1405, 1, 1
+    g_d_m = (0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334)
+    jy = 979 if gy > 1600 else 0
+    gy -= 1600 if gy > 1600 else 621
+    gy2 = gy + 1 if gm > 2 else gy
+    days = (365 * gy) + ((gy2 + 3) // 4) - ((gy2 + 99) // 100) + ((gy2 + 399) // 400) - 80 + gd + g_d_m[gm - 1]
+    jy += 33 * (days // 12053)
+    days %= 12053
+    jy += 4 * (days // 1461)
+    days %= 1461
+    if days > 365:
+        jy += (days - 1) // 365
+        days = (days - 1) % 365
+    jm = 1 + (days // 31) if days < 186 else 7 + ((days - 186) // 30)
+    jd = 1 + (days % 31) if days < 186 else 1 + ((days - 186) % 30)
+    return jy, jm, jd
 
-WEEKLY_ZEKR = {5: "یا رَبَّ الْعالَمین", 6: "یا ذاالْجَلالِ وَ الْاِکْرام", 0: "یا قاضِیَ الْحاجات", 1: "یا اَرْحَمَ الرّاحِمین", 2: "یا حَیُّ یا قَیّوُم", 3: "لا اِلهَ اِلّا اللهُ الْمَلِکُ الْحَقُّ الْمُبین", 4: "اَللّهُمَّ صَلِّ عَلی مُحَمَّد وَ آلِ مُحَمَّد"}
-ZEKR_FOLDERS = (("صلوات", "اَللّهُمَّ صَلِّ عَلی مُحَمَّد وَ آلِ مُحَمَّد"), ("رزق و روزی", "یا رزاق یا غنی"), ("گشایش مشکلات", "یا قاضی الحاجات"), ("آرامش قلب", "یا سلام یا لطیف"))
+WEEKLY_ZEKR = {
+    5: "یا رَبَّ الْعالَمین", 6: "یا ذاالْجَلالِ وَ الْاِکْرام", 0: "یا قاضِیَ الْحاجات",
+    1: "یا اَرْحَمَ الرّاحِمین", 2: "یا حَیُّ یا قَیّوُم",
+    3: "لا اِلهَ اِلّا اللهُ الْمَلِکُ الْحَقُّ الْمُبین", 4: "اَللّهُمَّ صَلِّ عَلی مُحَمَّد وَ آلِ مُحَمَّد"
+}
+
+class IconBase(FloatLayout):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.size_hint = (None, None)
+        self.size = (dp(36), dp(36))
+
+class StarIcon(IconBase):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        with self.canvas:
+            Color(0.95, 0.75, 0.15, 1)
+            self.circle = Ellipse(pos=self.pos, size=self.size)
+        self.bind(pos=self._upd, size=self._upd)
+        self.add_widget(Label(text="*", font_size="22sp", color=(0.15, 0.1, 0.05, 1), bold=True, pos_hint={'center_x': 0.5, 'center_y': 0.5}))
+    def _upd(self, *args): self.circle.pos, self.circle.size = self.pos, self.size
+
+class CoinIcon(IconBase):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        with self.canvas:
+            Color(0.9, 0.7, 0.15, 1)
+            self.circle = Ellipse(pos=self.pos, size=self.size)
+            Color(0.6, 0.45, 0.05, 1)
+            self.ring = Line(circle=(self.center_x, self.center_y, dp(14)), width=1.5)
+        self.bind(pos=self._upd, size=self._upd)
+        self.add_widget(Label(text="$", font_size="20sp", color=(0.4, 0.3, 0.05, 1), bold=True, pos_hint={'center_x': 0.5, 'center_y': 0.5}))
+    def _upd(self, *args):
+        self.circle.pos, self.circle.size = self.pos, self.size
+        self.ring.circle = (self.center_x, self.center_y, dp(14))
+
+class LockIcon(IconBase):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        with self.canvas:
+            Color(0.25, 0.55, 0.95, 1)
+            self.shackle = Ellipse(pos=(self.x+8, self.y+18), size=(20, 18))
+            self.body = RoundedRectangle(pos=(self.x+4, self.y+4), size=(28, 22), radius=[dp(4)])
+        self.bind(pos=self._upd, size=self._upd)
+    def _upd(self, *args):
+        self.shackle.pos, self.shackle.size = (self.x+8, self.y+18), (20, 18)
+        self.body.pos, self.body.size = (self.x+4, self.y+4), (28, 22)
+
+class BirdIcon(IconBase):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        with self.canvas:
+            Color(0.85, 0.4, 0.65, 1)
+            self.body = Ellipse(pos=(self.x+10, self.y+10), size=(16, 14))
+        self.bind(pos=self._upd, size=self._upd)
+    def _upd(self, *args): self.body.pos, self.body.size = (self.x+10, self.y+10), (16, 14)
+
+ZEKR_FOLDERS = (
+    ("صلوات", StarIcon if 'StarIcon' in locals() else FloatLayout, ("اَللّهُمَّ صَلِّ عَلی مُحَمَّد وَ آلِ مُحَمَّد", "اَللّهُمَّ صَلِّ عَلی مُحَمَّد", "صَلَّی اللهُ عَلَیهِ وَ آلِهِ")),
+    ("رزق و روزی", CoinIcon if 'CoinIcon' in locals() else FloatLayout, ("یا رزاق", "یا غنی", "یا واسع", "یا فتاح", "استغفرالله")),
+    ("گشایش مشکلات", LockIcon if 'LockIcon' in locals() else FloatLayout, ("یا فتاح", "یا کاشف الکرب", "یا مجیب", "یا قاضی الحاجات")),
+    ("آرامش قلب", BirdIcon if 'BirdIcon' in locals() else FloatLayout, ("یا سلام", "یا لطیف", "یا صبور", "یا نور", "یا رؤوف"))
+)
+
+class GlassCard(BoxLayout):
+    def __init__(self, radius=20, **kw):
+        super().__init__(**kw)
+        self.orientation = "vertical"
+        self.padding, self.spacing = dp(15), dp(10)
+        self.size_hint_y = None
+        self.bind(minimum_height=self.setter("height"))
+        with self.canvas.before:
+            Color(1, 1, 1, 0.04)
+            self.bg = RoundedRectangle(radius=(radius, radius, radius, radius))
+            Color(1, 1, 1, 0.08)
+            self.border = Line(rounded_rectangle=(0, 0, 100, 100, radius), width=1.1)
+        self.bind(pos=self._upd, size=self._upd)
+    def _upd(self, *a):
+        self.bg.pos, self.bg.size = self.pos, self.size
+        self.border.rounded_rectangle = (self.x, self.y, self.width, self.height, 20)
+
+class StyledBtn(Button):
+    def __init__(self, text="", bg=(0.15, 0.35, 0.85, 1), **kw):
+        super().__init__(**kw)
+        self.text = text
+        if FONT_NAME: self.font_name = FONT_NAME
+        self.background_normal, self.background_color = "", (0, 0, 0, 0)
+        self.bold, self.font_size, self.size_hint_y, self.height = True, "20sp", None, dp(54)
+        with self.canvas.before:
+            Color(*bg)
+            self.rect = RoundedRectangle(radius=(dp(12), dp(12), dp(12), dp(12)))
+        self.bind(pos=self._upd, size=self._upd)
+    def _upd(self, *a): self.rect.pos, self.rect.size = self.pos, self.size
+
+class FLabel(Label):
+    def __init__(self, text="", **kw):
+        super().__init__(**kw)
+        if FONT_NAME: self.font_name = FONT_NAME
+        self.text = text
+        self.halign = 'center'
+        self.valign = 'middle'
 
 class TasbihNoorApp(App):
     def load_data(self):
-        try:
-            if os.path.exists(self.DATA_FILE):
-                with open(self.DATA_FILE, 'r', encoding='utf-8') as f: return json.load(f)
-        except: pass
-        return {'count': 0, 'daily_target': 100}
+        if os.path.exists(self.DATA_FILE):
+            try:
+                with open(self.DATA_FILE, 'r', encoding='utf-8') as f:
+                    return json.load(f)
+            except: pass
+        return {}
 
-    def save_data(self):
+    def open_support(self, instance):
+        # تغییر آدرس جهت باز شدن مستقیم در داخل اپلیکیشن بله کاربر
         try:
-            with open(self.DATA_FILE, 'w', encoding='utf-8') as f: json.dump(self.data, f, ensure_ascii=False, indent=2)
-        except: pass
+            webbrowser.open("bale://channel?name=zekarnoor")
+        except:
+            webbrowser.open("https://ble.ir")
 
     def build(self):
-        try:
-            self.DATA_FILE = os.path.join(self.user_data_dir, "zekr_data.json")
-            self.data = self.load_data()
-            ml = FloatLayout()
-            
-            now = datetime.now()
-            jy, jm, jd = gregorian_to_jalali(now.year, now.month, now.day)
-            time_str = fa(now.strftime("%H:%M"))
-            date_str = fa(f"{jy}/{jm}/{jd}")
-            zekr_day = fa(WEEKLY_ZEKR.get(now.weekday(), ""))
-            
-            self.lbl_info_left = Label(text=f"{time_str}\n{date_str}", font_size="13sp", color=(1, 1, 1, 0.75), pos_hint={'center_x': 0.22, 'center_y': 0.94}, font_name=FONT_NAME, halign='left', valign='middle')
-            self.lbl_info_left.bind(size=lambda s, w: setattr(s, 'text_size', (w, None)))
-            ml.add_widget(self.lbl_info_left)
-            
-            self.lbl_info_right = Label(text=zekr_day, font_size="14sp", bold=True, color=(1, 0.9, 0.5, 1), pos_hint={'center_x': 0.78, 'center_y': 0.94}, font_name=FONT_NAME, halign='right', valign='middle')
-            self.lbl_info_right.bind(size=lambda s, w: setattr(s, 'text_size', (w, None)))
-            ml.add_widget(self.lbl_info_right)
-            
-            self.lbl_count = Label(text=str(self.data['count']).translate(FA_DIGITS), font_size="90sp", bold=True, color=(1, 1, 1, 1), pos_hint={'center_x': 0.65, 'center_y': 0.75}, font_name=FONT_NAME)
-            ml.add_widget(self.lbl_count)
-            
-            t_val = self.data.get('daily_target', 100)
-            self.lbl_target = Label(text=str(t_val).translate(FA_DIGITS) + " : " + fa("هدف روزانه"), font_size="16sp", color=(1, 1, 1, 0.7), pos_hint={'center_x': 0.5, 'center_y': 0.62}, font_name=FONT_NAME)
-            ml.add_widget(self.lbl_target)
-            
-            self.progress_bar = ProgressBar(max=t_val, value=min(self.data['count'], t_val), size_hint=(0.9, None), height=dp(10), pos_hint={'center_x': 0.5, 'center_y': 0.65})
-            ml.add_widget(self.progress_bar)
-            
-            b1 = BoxLayout(orientation='horizontal', spacing=dp(15), size_hint=(0.9, 0.08), pos_hint={'center_x': 0.5, 'center_y': 0.54})
-            bp = Button(text="+1", font_size="22sp", bold=True, background_color=(0.45, 0.3, 0.6, 1))
-            bp.bind(on_release=self.inc)
-            bm = Button(text="-1", font_size="22sp", bold=True, background_color=(0.35, 0.25, 0.45, 1))
-            bm.bind(on_release=self.dec)
-            b1.add_widget(bm); b1.add_widget(bp); ml.add_widget(b1)
-            
-            b2 = BoxLayout(orientation='horizontal', spacing=dp(15), size_hint=(0.9, 0.08), pos_hint={'center_x': 0.5, 'center_y': 0.44})
-            bg = Button(text=fa("هدف"), font_size="18sp", background_color=(0, 0.6, 0.2, 1), color=(1, 1, 1, 1), background_normal="", font_name=FONT_NAME)
-            bg.bind(on_release=self.set_t)
-            br = Button(text=fa("ریست"), font_size="18sp", background_color=(0.8, 0.1, 0.1, 1), color=(1, 1, 1, 1), background_normal="", font_name=FONT_NAME)
-            br.bind(on_release=self.rst)
-            b2.add_widget(br); b2.add_widget(bg); ml.add_widget(b2)
-            
-            bb = Button(text=fa("بانک ذکر"), font_size="24sp", background_color=(0.45, 0.25, 0.8, 1), size_hint=(0.9, 0.08), pos_hint={'center_x': 0.5, 'center_y': 0.2}, font_name=FONT_NAME)
-            bb.bind(on_release=self.show_z)
-            ml.add_widget(bb)
-            
-            bs = Button(text=fa("لطفا از ما حمایت کنید\nامتیاز دادن و عضویت در کانال بله"), font_size="16sp", background_color=(0, 0, 0, 0), size_hint=(0.9, 0.08), pos_hint={'center_x': 0.5, 'center_y': 0.08}, font_name=FONT_NAME, halign="center", valign="middle")
-            bs.bind(size=lambda s, w: setattr(s, 'text_size', (w, None)))
-            bs.bind(on_press=self.open_bale)
-            ml.add_widget(bs)
-            return ml
-        except:
-            fb = FloatLayout(); fb.add_widget(Label(text="Tasbih Noor", font_size="24sp")); return fb
+        self.DATA_FILE = os.path.join(self.user_data_dir, "zekr_data.json")
+        self.data = self.load_data()
+        self.root_layout = FloatLayout()
+        
+        if os.path.exists(BACKGROUND_FILE):
+            self.root_layout.add_widget(Image(source=BACKGROUND_FILE, allow_stretch=True, keep_ratio=False, size_hint=(1, 1)))
+        
+        content_box = BoxLayout(orientation='vertical', padding=dp(20), spacing=dp(12), size_hint=(1, 1))
+        
+        header_box = BoxLayout(orientation='horizontal', size_hint_y=None, height=dp(50))
+        self.lbl_datetime = FLabel(text="", font_size="14sp", size_hint_x=0.4, color=(1, 1, 1, 0.7))
+        self.lbl_week_val = FLabel(text="", font_size="14sp", size_hint_x=0.6, bold=True, color=(1, 0.9, 0.5, 1))
+        header_box.add_widget(self.lbl_datetime)
+        header_box.add_widget(self.lbl_week_val)
+        content_box.add_widget(header_box)
+        
+        self.lbl_guide = FLabel(text="", font_size="24sp", color=(0.4, 0.9, 0.5, 1), size_hint_y=None, height=dp(35))
+        content_box.add_widget(self.lbl_guide)
 
-    def inc(self, instance):
-        try:
-            self.data['count'] += 1
-            self.lbl_count.text = str(self.data['count']).translate(FA_DIGITS)
-            self.progress_bar.value = min(self.data['count'], self.data.get('daily_target', 100))
-            self.save_data()
-        except: pass
-
-    def dec(self, instance):
-        try:
-            if self.data['count'] > 0:
-                self.data['count'] -= 1
-                self.lbl_count.text = str(self.data['count']).translate(FA_DIGITS)
-                self.progress_bar.value = min(self.data['count'], self.data.get('daily_target', 100))
-                self.save_data()
-        except: pass
-
-    def rst(self, instance):
-        try:
-            self.data['count'] = 0
-            self.lbl_count.text = "۰"
-            self.progress_bar.value = 0
-            self.save_data()
-        except: pass
-
-    def set_t(self, instance):
-        try:
-            c = BoxLayout(orientation='vertical', padding=dp(10), spacing=dp(10))
-            self.txt_i = TextInput(text=str(self.data.get('daily_target', 100)), input_filter='int', multiline=False, font_size="20sp")
-            bs = Button(text=fa("ذخیره"), color=(1, 1, 1, 1), font_name=FONT_NAME)
-            p = Popup(title=fa("هدف روزانه"), content=c, size_hint=(0.85, 0.4))
-            bs.bind(on_release=lambda x: self.save_t(p))
-            c.add_widget(self.txt_i); c.add_widget(bs); p.open()
-        except: pass
-
-    def save_t(self, p):
-        try:
-            val = int(self.txt_i.text)
-            if val > 0:
-                self.data['daily_target'] = val
-                self.lbl_target.text = str(val).translate(FA_DIGITS) + " : " + fa("هدف روزانه")
-                self.progress_bar.max = val
-                self.progress_bar.value = min(self.data['count'], val)
-                self.save_data()
-        except: pass
-        try: p.dismiss()
-        except: pass
-
-    def show_z(self, instance):
-        try:
-            c = BoxLayout(orientation='vertical', padding=dp(10), spacing=dp(10))
-            for title, text in ZEKR_FOLDERS:
-                btn = Button(text=fa(title) + " - " + fa(text), color=(1, 1, 1, 1), font_name=FONT_NAME, font_size="13sp")
-                c.add_widget(btn)
-            Popup(title=fa("بانک ذکر"), content=c, size_hint=(0.85, 0.6)).open()
-        except: pass
-
-    def open_bale(self, instance):
-        try: webbrowser.open("bale://channel?name=zekarnoor")
-        except: webbrowser.open("https://ble.ir")
+        # -------------------------------------------------------------
+        # بخش اصلاح شده: دکمه با تراز متمایل به سمت راست، حل فواصل حروف و رفتن مستقیم به بله
+        # -------------------------------------------------------------
+        self.support_btn = Button(
+            text=fa("حمایت از ما و عضویت در کانال بله"),
+            font_name="Vazir",
+            font_size=20,
+            halign="right",
+            valign="middle",
+            padding=(dp(20), 0),
+            background_color=(0.1, 0.6, 0.2, 1),
+            color=(1, 1, 1, 1),
+            size_hint_y=None,
+            height=dp(60)
+        )
+        self.support_btn.bind(size=lambda s, w: setattr(s, 'text_size', w))
+        self.support_btn.bind(on_press=self.open_support)
+        content_box.add_widget(self.support_btn)
+        
+        self.root_layout.add_widget(content_box)
+        return self.root_layout
 
 if __name__ == '__main__':
-    try: TasbihNoorApp().run()
-    except: pass
+    TasbihNoorApp().run()

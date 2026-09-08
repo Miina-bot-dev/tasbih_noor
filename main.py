@@ -2,7 +2,6 @@
 import os, json, webbrowser, arabic_reshaper
 from datetime import datetime
 from kivy.app import App
-from kivy.clock import Clock
 from kivy.core.text import LabelBase
 from kivy.core.window import Window
 from kivy.uix.floatlayout import FloatLayout
@@ -50,7 +49,8 @@ def gregorian_to_jalali(gy, gm, gd):
     except: return 1405, 1, 1
 
 WEEKLY_ZEKR = {5: "یا رَبَّ الْعالَمین", 6: "یا ذاالْجَلالِ وَ الْاِکْرام", 0: "یا قاضِیَ الْحاجات", 1: "یا اَرْحَمَ الرّاحِمین", 2: "یا حَیُّ یا قَیّوُم", 3: "لا اِلهَ اِلّا اللهُ الْمَلِکُ الْحَقُّ الْمُبین", 4: "اَللّهُمَّ صَلِّ عَلی مُحَمَّد وَ آلِ مُحَمَّد"}
-ZEKR_FOLDERS = (("صلوات", ("اَللّهُمَّ صَلِّ عَلی مُحَمَّد وَ آلِ مُحَمَّد", "صَلَّی اللهُ عَلَیهِ وَ آلِهِ")), ("رزق و روزی", ("یا رزاق", "یا غنی")), ("گشایش مشکلات", ("یا کاشف الکرب", "یا قاضی الحاجات")), ("آرامش قلب", ("یا سلام", "یا لطیف")))
+ZEKR_FOLDERS = (("صلوات", "اَللّهُمَّ صَلِّ عَلی مُحَمَّد وَ آلِ مُحَمَّد"), ("رزق و روزی", "یا رزاق یا غنی"), ("گشایش مشکلات", "یا قاضی الحاجات"), ("آرامش قلب", "یا سلام یا لطیف"))
+
 class TasbihNoorApp(App):
     def load_data(self):
         try:
@@ -70,11 +70,17 @@ class TasbihNoorApp(App):
             self.data = self.load_data()
             ml = FloatLayout()
             
-            self.lbl_info_left = Label(text="", font_size="13sp", color=(1, 1, 1, 0.75), pos_hint={'center_x': 0.22, 'center_y': 0.94}, font_name=FONT_NAME, halign='left', valign='middle')
+            now = datetime.now()
+            jy, jm, jd = gregorian_to_jalali(now.year, now.month, now.day)
+            time_str = fa(now.strftime("%H:%M"))
+            date_str = fa(f"{jy}/{jm}/{jd}")
+            zekr_day = fa(WEEKLY_ZEKR.get(now.weekday(), ""))
+            
+            self.lbl_info_left = Label(text=f"{time_str}\n{date_str}", font_size="13sp", color=(1, 1, 1, 0.75), pos_hint={'center_x': 0.22, 'center_y': 0.94}, font_name=FONT_NAME, halign='left', valign='middle')
             self.lbl_info_left.bind(size=lambda s, w: setattr(s, 'text_size', (w, None)))
             ml.add_widget(self.lbl_info_left)
             
-            self.lbl_info_right = Label(text="", font_size="14sp", bold=True, color=(1, 0.9, 0.5, 1), pos_hint={'center_x': 0.78, 'center_y': 0.94}, font_name=FONT_NAME, halign='right', valign='middle')
+            self.lbl_info_right = Label(text=zekr_day, font_size="14sp", bold=True, color=(1, 0.9, 0.5, 1), pos_hint={'center_x': 0.78, 'center_y': 0.94}, font_name=FONT_NAME, halign='right', valign='middle')
             self.lbl_info_right.bind(size=lambda s, w: setattr(s, 'text_size', (w, None)))
             ml.add_widget(self.lbl_info_right)
             
@@ -110,18 +116,9 @@ class TasbihNoorApp(App):
             bs.bind(size=lambda s, w: setattr(s, 'text_size', (w, None)))
             bs.bind(on_press=self.open_bale)
             ml.add_widget(bs)
-            
-            Clock.schedule_interval(self.upd, 1); self.upd(0)
             return ml
         except:
             fb = FloatLayout(); fb.add_widget(Label(text="Tasbih Noor", font_size="24sp")); return fb
-    def upd(self, dt):
-        try:
-            now = datetime.now()
-            jy, jm, jd = gregorian_to_jalali(now.year, now.month, now.day)
-            self.lbl_info_left.text = f"{fa(now.strftime('%H:%M:%S'))}\n{str(jy).translate(FA_DIGITS)}/{str(jm).translate(FA_DIGITS)}/{str(jd).translate(FA_DIGITS)}"
-            self.lbl_info_right.text = fa(WEEKLY_ZEKR.get(now.weekday(), ""))
-        except: pass
 
     def inc(self, instance):
         try:
@@ -170,12 +167,12 @@ class TasbihNoorApp(App):
         except: pass
         try: p.dismiss()
         except: pass
+
     def show_z(self, instance):
-        """ساخت پاپ‌آپی حاوی اسکرول‌بار برای دسته‌بندی‌های اصلی بانک ذکر"""
         try:
             c = BoxLayout(orientation='vertical', padding=dp(10), spacing=dp(10))
-            for title, _ in ZEKR_FOLDERS:
-                btn = Button(text=fa(title), color=(1, 1, 1, 1), font_name=FONT_NAME)
+            for title, text in ZEKR_FOLDERS:
+                btn = Button(text=fa(title) + " - " + fa(text), color=(1, 1, 1, 1), font_name=FONT_NAME, font_size="13sp")
                 c.add_widget(btn)
             Popup(title=fa("بانک ذکر"), content=c, size_hint=(0.85, 0.6)).open()
         except: pass
@@ -185,6 +182,5 @@ class TasbihNoorApp(App):
         except: webbrowser.open("https://ble.ir")
 
 if __name__ == '__main__':
-    try: 
-        TasbihNoorApp().run()
+    try: TasbihNoorApp().run()
     except: pass

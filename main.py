@@ -241,7 +241,7 @@ class TasbihNoorApp(App):
             fallback = FloatLayout()
             fallback.add_widget(Label(text="Tasbih Noor", font_size="24sp"))
             return fallback
-    def update_clock(self, dt):
+                def update_clock(self, dt):
         try:
             now = datetime.now()
             jy, jm, jd = gregorian_to_jalali(now.year, now.month, now.day)
@@ -376,3 +376,4 @@ if __name__ == '__main__':
     try:
         TasbihNoorApp().run()
     except: pass
+

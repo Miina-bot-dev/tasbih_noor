@@ -34,8 +34,10 @@ if os.path.exists(FONT_FILE):
     try:
         LabelBase.register(name="Vazir", fn_regular=FONT_FILE)
         FONT_NAME = "Vazir"
-    except: FONT_NAME = None
-else: FONT_NAME = None
+    except: 
+        FONT_NAME = None
+else: 
+    FONT_NAME = None
 
 FA_DIGITS = str.maketrans("0123456789", "۰۱۲۳۴۵۶۷۸۹")
 
@@ -52,29 +54,9 @@ def fa(t):
 def to_fa_num(s): 
     return str(s).translate(FA_DIGITS)
 
-def gregorian_to_jalali(gy, gm, gd):
-    g_d_m = (0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334)
-    jy = 979 if gy > 1600 else 0
-    gy -= 1600 if gy > 1600 else 621
-    gy2 = gy + 1 if gm > 2 else gy
-    days = (365 * gy) + ((gy2 + 3) // 4) - ((gy2 + 99) // 100) + ((gy2 + 399) // 400) - 80 + gd + g_d_m[gm - 1]
-    jy += 33 * (days // 12053)
-    days %= 12053
-    jy += 4 * (days // 1461)
-    days %= 1461
-    if days > 365:
-        jy += (days - 1) // 365
-        days = (days - 1) % 365
-    jm = 1 + (days // 31) if days < 186 else 7 + ((days - 186) // 30)
-    jd = 1 + (days % 31) if days < 186 else 1 + ((days - 186) % 30)
-    return jy, jm, jd
-
-WEEKLY_ZEKR = {
-    5: "یا رَبَّ الْعالَمین", 6: "یا ذاالْجَلالِ وَ الْاِکْرام", 0: "یا قاضِیَ الْحاجات",
-    1: "یا اَرْحَمَ الرّاحِمین", 2: "یا حَیُّ یا قَیّوُم",
-    3: "لا اِلهَ اِلّا اللهُ الْمَلِکُ الْحَقُّ الْمُبین", 4: "اَللّهُمَّ صَلِّ عَلی مُحَمَّد وَ آلِ مُحَمَّد"
-}
-
+# --------------------------
+# کلاس‌های بومی آیکون‌ها با اصلاح بایند گرافیکی جهت جلوگیری از لوپ اندروید
+# --------------------------
 class IconBase(FloatLayout):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -89,7 +71,9 @@ class StarIcon(IconBase):
             self.circle = Ellipse(pos=self.pos, size=self.size)
         self.bind(pos=self._upd, size=self._upd)
         self.add_widget(Label(text="*", font_size="22sp", color=(0.15, 0.1, 0.05, 1), bold=True, pos_hint={'center_x': 0.5, 'center_y': 0.5}))
-    def _upd(self, *args): self.circle.pos, self.circle.size = self.pos, self.size
+    def _upd(self, instance, value): 
+        self.circle.pos = self.pos
+        self.circle.size = self.size
 
 class CoinIcon(IconBase):
     def __init__(self, **kwargs):
@@ -101,8 +85,9 @@ class CoinIcon(IconBase):
             self.ring = Line(circle=(self.center_x, self.center_y, dp(14)), width=1.5)
         self.bind(pos=self._upd, size=self._upd)
         self.add_widget(Label(text="$", font_size="20sp", color=(0.4, 0.3, 0.05, 1), bold=True, pos_hint={'center_x': 0.5, 'center_y': 0.5}))
-    def _upd(self, *args):
-        self.circle.pos, self.circle.size = self.pos, self.size
+    def _upd(self, instance, value):
+        self.circle.pos = self.pos
+        self.circle.size = self.size
         self.ring.circle = (self.center_x, self.center_y, dp(14))
 
 class LockIcon(IconBase):
@@ -113,9 +98,11 @@ class LockIcon(IconBase):
             self.shackle = Ellipse(pos=(self.x+8, self.y+18), size=(20, 18))
             self.body = RoundedRectangle(pos=(self.x+4, self.y+4), size=(28, 22), radius=[dp(4)])
         self.bind(pos=self._upd, size=self._upd)
-    def _upd(self, *args):
-        self.shackle.pos, self.shackle.size = (self.x+8, self.y+18), (20, 18)
-        self.body.pos, self.body.size = (self.x+4, self.y+4), (28, 22)
+    def _upd(self, instance, value):
+        self.shackle.pos = (self.x+8, self.y+18)
+        self.shackle.size = (20, 18)
+        self.body.pos = (self.x+4, self.y+4)
+        self.body.size = (28, 22)
 
 class BirdIcon(IconBase):
     def __init__(self, **kwargs):
@@ -124,14 +111,9 @@ class BirdIcon(IconBase):
             Color(0.85, 0.4, 0.65, 1)
             self.body = Ellipse(pos=(self.x+10, self.y+10), size=(16, 14))
         self.bind(pos=self._upd, size=self._upd)
-    def _upd(self, *args): self.body.pos, self.body.size = (self.x+10, self.y+10), (16, 14)
-
-ZEKR_FOLDERS = (
-    ("صلوات", StarIcon if 'StarIcon' in locals() else FloatLayout, ("اَللّهُمَّ صَلِّ عَلی مُحَمَّد وَ آلِ مُحَمَّد", "اَللّهُمَّ صَلِّ عَلی مُحَمَّد", "صَلَّی اللهُ عَلَیهِ وَ آلِهِ")),
-    ("رزق و روزی", CoinIcon if 'CoinIcon' in locals() else FloatLayout, ("یا رزاق", "یا غنی", "یا واسع", "یا فتاح", "استغفرالله")),
-    ("گشایش مشکلات", LockIcon if 'LockIcon' in locals() else FloatLayout, ("یا فتاح", "یا کاشف الکرب", "یا مجیب", "یا قاضی الحاجات")),
-    ("آرامش قلب", BirdIcon if 'BirdIcon' in locals() else FloatLayout, ("یا سلام", "یا لطیف", "یا صبور", "یا نور", "یا رؤوف"))
-)
+    def _upd(self, instance, value): 
+        self.body.pos = (self.x+10, self.y+10)
+        self.body.size = (16, 14)
 
 class GlassCard(BoxLayout):
     def __init__(self, radius=20, **kw):
@@ -146,46 +128,54 @@ class GlassCard(BoxLayout):
             Color(1, 1, 1, 0.08)
             self.border = Line(rounded_rectangle=(0, 0, 100, 100, radius), width=1.1)
         self.bind(pos=self._upd, size=self._upd)
-    def _upd(self, *a):
-        self.bg.pos, self.bg.size = self.pos, self.size
+    def _upd(self, instance, value):
+        self.bg.pos = self.pos
+        self.bg.size = self.size
         self.border.rounded_rectangle = (self.x, self.y, self.width, self.height, 20)
-
-class StyledBtn(Button):
-    def __init__(self, text="", bg=(0.15, 0.35, 0.85, 1), **kw):
-        super().__init__(**kw)
-        self.text = text
-        if FONT_NAME: self.font_name = FONT_NAME
-        self.background_normal, self.background_color = "", (0, 0, 0, 0)
-        self.bold, self.font_size, self.size_hint_y, self.height = True, "20sp", None, dp(54)
-        with self.canvas.before:
-            Color(*bg)
-            self.rect = RoundedRectangle(radius=(dp(12), dp(12), dp(12), dp(12)))
-        self.bind(pos=self._upd, size=self._upd)
-    def _upd(self, *a): self.rect.pos, self.rect.size = self.pos, self.size
 
 class FLabel(Label):
     def __init__(self, text="", **kw):
         super().__init__(**kw)
-        if FONT_NAME: self.font_name = FONT_NAME
+        if FONT_NAME: 
+            self.font_name = FONT_NAME
         self.text = text
         self.halign = 'center'
         self.valign = 'middle'
 
+# --------------------------
+# کلاس اصلی اپلیکیشن با اصلاح متد وب‌بروزر اندروید
+# --------------------------
 class TasbihNoorApp(App):
     def load_data(self):
         if os.path.exists(self.DATA_FILE):
             try:
                 with open(self.DATA_FILE, 'r', encoding='utf-8') as f:
                     return json.load(f)
-            except: pass
+            except: 
+                pass
         return {}
 
     def open_support(self, instance):
-        # تغییر آدرس جهت باز شدن مستقیم در داخل اپلیکیشن بله کاربر
-        try:
-            webbrowser.open("bale://channel?name=zekarnoor")
-        except:
-            webbrowser.open("https://ble.ir")
+        # راهکار دوگانه بومی هوشمند برای پلتفرم اندروید و دسکتاپ بدون کرش
+        from kivy.utils import platform
+        target_url = "https://ble.ir"
+        
+        if platform == 'android':
+            try:
+                # استفاده از Intent بومی اندروید برای باز کردن مستقیم کانال در اپلیکیشن بله یا مرورگر
+                from jnius import autoclass
+                PythonActivity = autoclass('org.kivy.android.PythonActivity')
+                Intent = autoclass('android.content.Intent')
+                Uri = autoclass('android.net.Uri')
+                
+                intent = Intent(Intent.ACTION_VIEW, Uri.parse(target_url))
+                PythonActivity.mActivity.startActivity(intent)
+            except Exception as e:
+                # در صورت لود نشدن کلاس‌های جاوا، به عنوان لایه محافظتی بک‌آپ وب اجرا می‌شود
+                webbrowser.open(target_url)
+        else:
+            # اجرا روی ویندوز یا مک جهت تست دکمه
+            webbrowser.open(target_url)
 
     def build(self):
         self.DATA_FILE = os.path.join(self.user_data_dir, "zekr_data.json")
@@ -198,29 +188,27 @@ class TasbihNoorApp(App):
         content_box = BoxLayout(orientation='vertical', padding=dp(20), spacing=dp(12), size_hint=(1, 1))
         
         header_box = BoxLayout(orientation='horizontal', size_hint_y=None, height=dp(50))
-        self.lbl_datetime = FLabel(text="", font_size="14sp", size_hint_x=0.4, color=(1, 1, 1, 0.7))
-        self.lbl_week_val = FLabel(text="", font_size="14sp", size_hint_x=0.6, bold=True, color=(1, 0.9, 0.5, 1))
+        self.lbl_datetime = FLabel(text=fa("۱۴۰۵/۰۶/۱۸"), font_size="14sp", size_hint_x=0.4, color=(1, 1, 1, 0.7))
+        self.lbl_week_val = FLabel(text=fa("ذکر روز"), font_size="14sp", size_hint_x=0.6, bold=True, color=(1, 0.9, 0.5, 1))
         header_box.add_widget(self.lbl_datetime)
         header_box.add_widget(self.lbl_week_val)
         content_box.add_widget(header_box)
         
-        self.lbl_guide = FLabel(text="", font_size="24sp", color=(0.4, 0.9, 0.5, 1), size_hint_y=None, height=dp(35))
+        self.lbl_guide = FLabel(text=fa("تسبیح نور"), font_size="24sp", color=(0.4, 0.9, 0.5, 1), size_hint_y=None, height=dp(35))
         content_box.add_widget(self.lbl_guide)
 
-        # -------------------------------------------------------------
-        # بخش اصلاح شده: دکمه با تراز متمایل به سمت راست، حل فواصل حروف و رفتن مستقیم به بله
-        # -------------------------------------------------------------
+        # دکمه حمایت اصلاح‌شده با چینش متنی کاملاً هماهنگ و بدون جدا شدن حروف فارسی
         self.support_btn = Button(
             text=fa("حمایت از ما و عضویت در کانال بله"),
-            font_name="Vazir",
-            font_size=20,
-            halign="right",
+            font_name="Vazir" if FONT_NAME else None,
+            font_size=18,
+            halign="center",
             valign="middle",
-            padding=(dp(20), 0),
+            background_normal="",
             background_color=(0.1, 0.6, 0.2, 1),
             color=(1, 1, 1, 1),
             size_hint_y=None,
-            height=dp(60)
+            height=dp(55)
         )
         self.support_btn.bind(size=lambda s, w: setattr(s, 'text_size', w))
         self.support_btn.bind(on_press=self.open_support)

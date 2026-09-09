@@ -46,7 +46,7 @@ android.api = 34
 android.minapi = 21
 
 # (str) Android NDK version to use
-# فیکس شد برای رفع خطای کامپایلر اندروید
+# اصلاح نسخه ان‌دی‌کی برای رفع خطای منسوخ شدن توابع اندروید
 android.ndk = 25c
 
 # (int) Android NDK API to use
@@ -74,7 +74,7 @@ android.signing.keystore = tasbih-releser.keystore
 android.signing.alias = tasbih-key
 
 # (str) python-for-android branch to use
-# فیکس شد برای رفع خطای پکیج منیجر کیوی
+# قفل شدن روی شاخه اصلی پایداری ابزارها
 p4a.branch = master
 
 [buildozer]

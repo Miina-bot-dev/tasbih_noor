@@ -199,7 +199,7 @@ class ZekrApp(App):
         btn_list.bind(on_press=self.open_zekr_list)
         self.main_layout.add_widget(btn_list)
 
-        # دکمه حمایت کاملاً راست‌چین با سایز فونت ۱۸ درخواستی شما بدون تداخل فضا
+        # دکمه حمایت کاملاً راست‌چین با فونت درشت ۱۸ درخواستی شما بدون تداخل فضا
         self.support_btn = Button(
             text=fa("لطفا از ما حمایت کنید") + "\n" + fa("امتیاز دادن و عضویت در کانال بله"),
             font_name="Vazir",

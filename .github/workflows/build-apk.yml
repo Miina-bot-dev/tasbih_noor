@@ -50,7 +50,7 @@ jobs:
           path: |
             ~/.buildozer
             .buildozer
-          key: ${{ runner.os }}-buildozer-${{ hashFiles('buildozer.spec') }}-v3
+          key: ${{ runner.os }}-buildozer-${{ hashFiles('buildozer.spec') }}-v4
           restore-keys: |
             ${{ runner.os }}-buildozer-
 
@@ -80,7 +80,7 @@ jobs:
       - name: Build Official Release APK
         run: |
           rm -rf bin/
-          buildozer android p4a -- clean_distributions
+          # حذف دستور اشتباه برای جلوگیری از متوقف شدن بیلدوزر
           yes | buildozer android release
         env:
           BUILDOZER_WARN_ON_ROOT: 0

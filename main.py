@@ -132,6 +132,7 @@ ZEKR_FOLDERS = (
     ("گشایش مشکلات", LockIcon if 'LockIcon' in locals() else FloatLayout, ("یا فتاح", "یا کاشف الکرب", "یا مجیب", "یا قاضی الحاجات")),
     ("آرامش قلب", BirdIcon if 'BirdIcon' in locals() else FloatLayout, ("یا سلام", "یا لطیف", "یا صبور", "یا نور", "یا رؤوف"))
 )
+
 class GlassCard(BoxLayout):
     def __init__(self, radius=20, **kw):
         super().__init__(**kw)
@@ -180,7 +181,7 @@ class TasbihNoorApp(App):
         return {}
 
     def open_support(self, instance):
-        # باز کردن مستقیم آیدی کانال در خود اپلیکیشن بله بدون باز شدن مرورگر
+        # تغییر آدرس جهت باز شدن مستقیم در داخل اپلیکیشن بله کاربر
         try:
             webbrowser.open("bale://channel?name=zekarnoor")
         except:
@@ -206,20 +207,22 @@ class TasbihNoorApp(App):
         self.lbl_guide = FLabel(text="", font_size="24sp", color=(0.4, 0.9, 0.5, 1), size_hint_y=None, height=dp(35))
         content_box.add_widget(self.lbl_guide)
 
-        # دکمه حمایت کاملاً اصلاح‌شده، راست‌چین و بدون آسیب به سایر اجزا
+        # -------------------------------------------------------------
+        # بخش اصلاح شده: دکمه با تراز متمایل به سمت راست، حل فواصل حروف و رفتن مستقیم به بله
+        # -------------------------------------------------------------
         self.support_btn = Button(
-            text=fa("لطفا از ما حمایت کنید") + "\n" + fa("امتیاز دادن و عضویت در کانال بله"),
+            text=fa("حمایت از ما و عضویت در کانال بله"),
             font_name="Vazir",
-            font_size=18,
+            font_size=20,
             halign="right",
             valign="middle",
-            padding=(dp(15), 0),
-            background_normal="",
-            background_color=(0.15, 0.35, 0.85, 0.4),
-            size_hint=(1, None),
-            height=dp(55)
+            padding=(dp(20), 0),
+            background_color=(0.1, 0.6, 0.2, 1),
+            color=(1, 1, 1, 1),
+            size_hint_y=None,
+            height=dp(60)
         )
-        self.support_btn.bind(size=lambda s, w: setattr(s, 'text_size', (w, None)))
+        self.support_btn.bind(size=lambda s, w: setattr(s, 'text_size', w))
         self.support_btn.bind(on_press=self.open_support)
         content_box.add_widget(self.support_btn)
         

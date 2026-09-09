@@ -42,7 +42,6 @@ jobs:
             exit 1
           fi
           echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > tasbih-releser.keystore
-          ls -la tasbih-releser.keystore
 
       - name: Cache buildozer
         uses: actions/cache@v4
@@ -50,22 +49,15 @@ jobs:
           path: |
             ~/.buildozer
             .buildozer
-          key: ${{ runner.os }}-buildozer-${{ hashFiles('buildozer.spec') }}-v5
+          key: ${{ runner.os }}-buildozer-${{ hashFiles('buildozer.spec') }}-v6
           restore-keys: |
             ${{ runner.os }}-buildozer-
-
-      - name: Pre-download freetype and core packages (bypass server down)
-        run: |
-          mkdir -p .buildozer/android/platform/build-arm64-v8a_armeabi-v7a/packages/freetype
-          cd .buildozer/android/platform/build-arm64-v8a_armeabi-v7a/packages/freetype
-          if [ ! -f "freetype-2.14.1.tar.gz" ]; then
-            curl -L -o freetype-2.14.1.tar.gz "https://github.com" || echo "skip"
-          fi
 
       - name: Build Official Release APK
         run: |
           rm -rf bin/
-          yes | buildozer android release
+          # استفاده از آرگومان بومی بیلدوزر به جای دستور لینوکسی yes
+          buildozer android release
         env:
           BUILDOZER_WARN_ON_ROOT: 0
 
@@ -77,7 +69,6 @@ jobs:
             echo "ERROR: No Release APK found"
             exit 1
           fi
-          echo "Found APK for signing: $APK"
           cp "$APK" bin/final/source-apk.apk
 
       - name: Sign APK Officially
@@ -87,21 +78,8 @@ jobs:
           KEY_PASS: ${{ secrets.KEY_PASS }}
         run: |
           BUILD_TOOLS=$(find "$ANDROID_SDK_ROOT/build-tools" -maxdepth 1 -type d | sort -V | tail -1)
-          echo "Using build-tools: $BUILD_TOOLS"
-
-          "$BUILD_TOOLS/zipalign" -v -p 4 \
-            bin/final/source-apk.apk \
-            bin/final/aligned.apk
-
-          "$BUILD_TOOLS/apksigner" sign \
-            --ks tasbih-releser.keystore \
-            --ks-key-alias tasbih-key \
-            --ks-pass pass:"$KEYSTORE_PASS" \
-            --key-pass pass:"$KEY_PASS" \
-            --out bin/final/tasbih-signed.apk \
-            bin/final/aligned.apk
-
-          "$BUILD_TOOLS/apksigner" verify -v --print-certs bin/final/tasbih-signed.apk
+          "$BUILD_TOOLS/zipalign" -v -p 4 bin/final/source-apk.apk bin/final/aligned.apk
+          "$BUILD_TOOLS/apksigner" sign --ks tasbih-releser.keystore --ks-key-alias tasbih-key --ks-pass pass:"$KEYSTORE_PASS" --key-pass pass:"$KEY_PASS" --out bin/final/tasbih-signed.apk bin/final/aligned.apk
 
       - name: Upload APK
         if: success()

@@ -22,9 +22,6 @@ from kivy.uix.scrollview import ScrollView
 from kivy.uix.progressbar import ProgressBar
 from kivy.uix.textinput import TextInput
 
-# --------------------------
-# تنظیمات پایه و گرافیکی اصلی شما
-# --------------------------
 Window.clearcolor = (0.1, 0.04, 0.18, 1)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__)) if '__file__' in locals() else '.'
 FONT_FILE = os.path.join(BASE_DIR, "Vazirmatn-Regular.ttf")
@@ -34,9 +31,9 @@ if os.path.exists(FONT_FILE):
     try:
         LabelBase.register(name="Vazir", fn_regular=FONT_FILE)
         FONT_NAME = "Vazir"
-    except: 
+    except:
         FONT_NAME = None
-else: 
+else:
     FONT_NAME = None
 
 FA_DIGITS = str.maketrans("0123456789", "۰۱۲۳۴۵۶۷۸۹")
@@ -54,9 +51,6 @@ def fa(t):
 def to_fa_num(s): 
     return str(s).translate(FA_DIGITS)
 
-# --------------------------
-# کلاس‌های بومی آیکون‌ها با اصلاح بایند گرافیکی جهت جلوگیری از لوپ اندروید
-# --------------------------
 class IconBase(FloatLayout):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -142,9 +136,6 @@ class FLabel(Label):
         self.halign = 'center'
         self.valign = 'middle'
 
-# --------------------------
-# کلاس اصلی اپلیکیشن با اصلاح متد وب‌بروزر اندروید
-# --------------------------
 class TasbihNoorApp(App):
     def load_data(self):
         if os.path.exists(self.DATA_FILE):
@@ -156,13 +147,11 @@ class TasbihNoorApp(App):
         return {}
 
     def open_support(self, instance):
-        # راهکار دوگانه بومی هوشمند برای پلتفرم اندروید و دسکتاپ بدون کرش
         from kivy.utils import platform
         target_url = "https://ble.ir"
         
         if platform == 'android':
             try:
-                # استفاده از Intent بومی اندروید برای باز کردن مستقیم کانال در اپلیکیشن بله یا مرورگر
                 from jnius import autoclass
                 PythonActivity = autoclass('org.kivy.android.PythonActivity')
                 Intent = autoclass('android.content.Intent')
@@ -170,11 +159,9 @@ class TasbihNoorApp(App):
                 
                 intent = Intent(Intent.ACTION_VIEW, Uri.parse(target_url))
                 PythonActivity.mActivity.startActivity(intent)
-            except Exception as e:
-                # در صورت لود نشدن کلاس‌های جاوا، به عنوان لایه محافظتی بک‌آپ وب اجرا می‌شود
+            except:
                 webbrowser.open(target_url)
         else:
-            # اجرا روی ویندوز یا مک جهت تست دکمه
             webbrowser.open(target_url)
 
     def build(self):
@@ -197,7 +184,6 @@ class TasbihNoorApp(App):
         self.lbl_guide = FLabel(text=fa("تسبیح نور"), font_size="24sp", color=(0.4, 0.9, 0.5, 1), size_hint_y=None, height=dp(35))
         content_box.add_widget(self.lbl_guide)
 
-        # دکمه حمایت اصلاح‌شده با چینش متنی کاملاً هماهنگ و بدون جدا شدن حروف فارسی
         self.support_btn = Button(
             text=fa("حمایت از ما و عضویت در کانال بله"),
             font_name="Vazir" if FONT_NAME else None,

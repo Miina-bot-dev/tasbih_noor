@@ -19,15 +19,12 @@ source.include_exts = py,png,jpg,jpeg,kv,atlas,ttf,json,txt,md
 version = 1.0.2
 
 # (int) Application version code (numeric)
-# این عدد برای اینکه بازار و مایکت فایل را به عنوان آپدیت قبول کنند بالا برده شد
 version.code = 3
 
 # (str) Icon of the application
-# اصلاح آدرس مستقیم آیکون بر اساس فایل ریشه گیت‌هاب شما
 icon.filename = icon.png
 
 # (list) Application requirements
-# حذف پکیج‌های بیودی و سیکس برای جلوگیری از کرش موتور متنی اندروید
 requirements = python3,kivy==2.2.1,arabic-reshaper,setuptools,wheel,pillow
 
 # (str) Supported orientations (valid options are: landscape, portrait or all)
@@ -49,7 +46,8 @@ android.api = 34
 android.minapi = 21
 
 # (str) Android NDK version to use
-android.ndk = 27c
+# فیکس شد برای رفع خطای کامپایلر اندروید
+android.ndk = 25c
 
 # (int) Android NDK API to use
 android.ndk_api = 21
@@ -76,7 +74,8 @@ android.signing.keystore = tasbih-releser.keystore
 android.signing.alias = tasbih-key
 
 # (str) python-for-android branch to use
-p4a.branch = v2024.01.21
+# فیکس شد برای رفع خطای پکیج منیجر کیوی
+p4a.branch = master
 
 [buildozer]
 

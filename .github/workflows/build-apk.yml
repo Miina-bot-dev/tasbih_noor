@@ -43,20 +43,31 @@ jobs:
           fi
           echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > tasbih-releser.keystore
 
+      - name: Auto-Accept Android Licenses Officially
+        run: |
+          # پذیرش رسمی تمام مجوزهای اندروید پیش از استارت بیلدوزر جهت جلوگیری از توقف تعاملی
+          mkdir -p ~/.android
+          touch ~/.android/repositories.cfg
+          if [ -d "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin" ]; then
+            yes | "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --licenses || true
+          elif [ -d "$ANDROID_SDK_ROOT/tools/bin" ]; then
+            yes | "$ANDROID_SDK_ROOT/tools/bin/sdkmanager" --licenses || true
+          fi
+
       - name: Cache buildozer
         uses: actions/cache@v4
         with:
           path: |
             ~/.buildozer
             .buildozer
-          key: ${{ runner.os }}-buildozer-${{ hashFiles('buildozer.spec') }}-v6
+          key: ${{ runner.os }}-buildozer-${{ hashFiles('buildozer.spec') }}-v7
           restore-keys: |
             ${{ runner.os }}-buildozer-
 
       - name: Build Official Release APK
         run: |
           rm -rf bin/
-          # استفاده از آرگومان بومی بیلدوزر به جای دستور لینوکسی yes
+          # اجرای مستقیم بدون فلگ‌های تداخلی
           buildozer android release
         env:
           BUILDOZER_WARN_ON_ROOT: 0

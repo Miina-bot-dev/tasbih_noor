@@ -21,6 +21,10 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
+      # تزریق مستقیم و بومی ابزارهای اندروید روی سرور جهت کاهش شانس خطا به صفر
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
       - name: Install system dependencies
         run: |
           sudo apt-get update
@@ -43,16 +47,10 @@ jobs:
           fi
           echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > tasbih-releser.keystore
 
-      - name: Auto-Accept Android Licenses Officially
+      # پذیرش آهنین تمام لایسنس‌ها مستقیماً روی SDK تزریق شده
+      - name: Accept Android Licenses
         run: |
-          # پذیرش رسمی تمام مجوزهای اندروید پیش از استارت بیلدوزر جهت جلوگیری از توقف تعاملی
-          mkdir -p ~/.android
-          touch ~/.android/repositories.cfg
-          if [ -d "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin" ]; then
-            yes | "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --licenses || true
-          elif [ -d "$ANDROID_SDK_ROOT/tools/bin" ]; then
-            yes | "$ANDROID_SDK_ROOT/tools/bin/sdkmanager" --licenses || true
-          fi
+          yes | sdkmanager --licenses || true
 
       - name: Cache buildozer
         uses: actions/cache@v4
@@ -60,17 +58,19 @@ jobs:
           path: |
             ~/.buildozer
             .buildozer
-          key: ${{ runner.os }}-buildozer-${{ hashFiles('buildozer.spec') }}-v7
+          key: ${{ runner.os }}-buildozer-${{ hashFiles('buildozer.spec') }}-v8
           restore-keys: |
             ${{ runner.os }}-buildozer-
 
       - name: Build Official Release APK
         run: |
           rm -rf bin/
-          # اجرای مستقیم بدون فلگ‌های تداخلی
+          # مجبور کردن بیلدوزر به استفاده از اندروید آماده سرور به جای دانلود مجدد
           buildozer android release
         env:
           BUILDOZER_WARN_ON_ROOT: 0
+          ANDROID_SDK_PATH: ${{ env.ANDROID_HOME }}
+          ANDROID_NDK_PATH: ${{ env.ANDROID_HOME }}/ndk-bundle
 
       - name: Prepare Final Directory
         run: |
@@ -88,7 +88,7 @@ jobs:
           KEYSTORE_PASS: ${{ secrets.KEYSTORE_PASS }}
           KEY_PASS: ${{ secrets.KEY_PASS }}
         run: |
-          BUILD_TOOLS=$(find "$ANDROID_SDK_ROOT/build-tools" -maxdepth 1 -type d | sort -V | tail -1)
+          BUILD_TOOLS=$(find "$ANDROID_HOME/build-tools" -maxdepth 1 -type d | sort -V | tail -1)
           "$BUILD_TOOLS/zipalign" -v -p 4 bin/final/source-apk.apk bin/final/aligned.apk
           "$BUILD_TOOLS/apksigner" sign --ks tasbih-releser.keystore --ks-key-alias tasbih-key --ks-pass pass:"$KEYSTORE_PASS" --key-pass pass:"$KEY_PASS" --out bin/final/tasbih-signed.apk bin/final/aligned.apk
 

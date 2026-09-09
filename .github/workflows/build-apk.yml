@@ -5,7 +5,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     timeout-minutes: 120
     steps:
       - uses: actions/checkout@v4
@@ -29,6 +29,7 @@ jobs:
             autoconf libtool pkg-config zlib1g-dev \
             libncurses5-dev libncursesw5-dev libtinfo5 \
             cmake libffi-dev libssl-dev
+
       - name: Install buildozer
         run: |
           pip install --upgrade pip setuptools wheel
@@ -53,16 +54,33 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-buildozer-
 
-      - name: Pre-download freetype (Bypass SourceForge 502)
+      - name: Pre-download freetype (bypass 502 error)
         run: |
           mkdir -p .buildozer/android/platform/build-arm64-v8a_armeabi-v7a/packages/freetype
           cd .buildozer/android/platform/build-arm64-v8a_armeabi-v7a/packages/freetype
-          if [ ! -f "freetype-2.14.1.tar.gz" ]; then
-            curl -L https://gnu.org -o freetype-2.14.1.tar.gz
+
+          if [ -f "freetype-2.14.1.tar.gz" ]; then
+            echo "freetype already cached"
+            exit 0
           fi
+
+          for url in \
+            "https://sourceforge.net" \
+            "https://github.com"; do
+            echo "Trying: $url"
+            if curl -L --fail --retry 3 --retry-delay 5 -o freetype-2.14.1.tar.gz "$url"; then
+              if gzip -t freetype-2.14.1.tar.gz 2>/dev/null; then
+                echo "SUCCESS from $url"
+                exit 0
+              fi
+            fi
+            rm -f freetype-2.14.1.tar.gz
+          done
+
       - name: Build Official Release APK
         run: |
           rm -rf bin/
+          # تغییر وضعیت به حالت ریلیز رسمی جهت هماهنگی با اندروید و اسکنر گوشی
           yes | buildozer android release
         env:
           BUILDOZER_WARN_ON_ROOT: 0
@@ -70,6 +88,7 @@ jobs:
       - name: Prepare Final Directory
         run: |
           mkdir -p bin/final
+          # پیدا کردن فایل ریلیز غیر امضا شده
           APK=$(find bin -name "*-unsigned.apk" -o -name "*-release.apk" | sort -V | tail -1)
           if [ -z "$APK" ]; then
             echo "ERROR: No Release APK found"

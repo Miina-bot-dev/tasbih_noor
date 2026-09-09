@@ -89,7 +89,7 @@ class GlassCard(BoxLayout):
         self.bind(minimum_height=self.setter("height"))
         with self.canvas.before:
             Color(0.12, 0.14, 0.22, 0.8)
-            self.bg = RoundedRectangle(radius=[dp(25)])
+            self.bg = RoundedRectangle(radius=[25])
         self.bind(pos=self._update_bg, size=self._update_bg)
     def _update_bg(self, *args):
         self.bg.pos = self.pos
@@ -109,7 +109,7 @@ class ModernBtn(Button):
         self.my_color = bg_color
         with self.canvas.before:
             Color(*self.my_color)
-            self.rect = RoundedRectangle(radius=[dp(25)])
+            self.rect = RoundedRectangle(radius=[25])
         self.bind(pos=self._update_rect, size=self._update_rect)
     def _update_rect(self, *args):
         self.rect.pos = self.pos

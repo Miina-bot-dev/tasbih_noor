@@ -33,7 +33,7 @@ jobs:
       - name: Install buildozer
         run: |
           pip install --upgrade pip setuptools wheel
-          pip install "cython<3.0.0" buildozer
+          pip install "cython==0.29.33" buildozer
 
       - name: Decode Keystore
         run: |
@@ -50,7 +50,7 @@ jobs:
           path: |
             ~/.buildozer
             .buildozer
-          key: ${{ runner.os }}-buildozer-${{ hashFiles('buildozer.spec') }}-v2
+          key: ${{ runner.os }}-buildozer-${{ hashFiles('buildozer.spec') }}-v3
           restore-keys: |
             ${{ runner.os }}-buildozer-
 
@@ -80,9 +80,7 @@ jobs:
       - name: Build Official Release APK
         run: |
           rm -rf bin/
-          # حذف کش‌های توزیع‌های قدیمی پایتون برای جلوگیری از تداخل کدهای clang
           buildozer android p4a -- clean_distributions
-          # تغییر وضعیت به حالت ریلیز رسمی جهت هماهنگی با اندروید و اسکنر گوشی
           yes | buildozer android release
         env:
           BUILDOZER_WARN_ON_ROOT: 0
@@ -90,7 +88,6 @@ jobs:
       - name: Prepare Final Directory
         run: |
           mkdir -p bin/final
-          # پیدا کردن فایل ریلیز غیر امضا شده با ساختار جدید
           APK=$(find bin -name "*.apk" | sort -V | tail -1)
           if [ -z "$APK" ]; then
             echo "ERROR: No Release APK found"

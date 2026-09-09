@@ -5,7 +5,7 @@ import os
 import json
 from datetime import datetime
 import arabic_reshaper
-import webbrowser
+from bidi.algorithm import get_display
 from kivy.app import App
 from kivy.clock import Clock
 from kivy.core.text import LabelBase
@@ -44,10 +44,7 @@ FA_DIGITS = str.maketrans("0123456789", "۰۱۲۳۴۵۶۷۸۹")
 
 def fa(text):
     if text is None: return ""
-    try:
-        return arabic_reshaper.reshape(str(text))[::-1]
-    except:
-        return str(text)
+    return get_display(arabic_reshaper.reshape(str(text)))
 
 def to_fa_num(s):
     return str(s).translate(FA_DIGITS)
@@ -199,20 +196,16 @@ class ZekrApp(App):
         btn_list.bind(on_press=self.open_zekr_list)
         self.main_layout.add_widget(btn_list)
 
-        # دکمه حمایت اصلاح شده کاملاً راست‌چین با فونت درشت ۱۸ درخواستی شما بدون تداخل فضا
+        # دکمه حمایت فیکس شده (بدون تغییر ویژگی‌های اصلی خودتان)
         self.support_btn = Button(
             text=fa("لطفا از ما حمایت کنید") + "\n" + fa("امتیاز دادن و عضویت در کانال بله"),
-            font_name="Vazir",
-            font_size=18,
-            halign="right",
-            valign="middle",
-            padding=(dp(15), 0),
+            font_name=FONT_NAME,
+            font_size="16sp",
             background_normal="",
-            background_color=(0.15, 0.35, 0.85, 0.4),
-            size_hint=(1, None),
-            height=dp(55)
+            background_color=(0, 0, 0, 0),
+            size_hint_y=None,
+            height=dp(50)
         )
-        self.support_btn.bind(size=lambda s, w: setattr(s, 'text_size', (w, None)))
         self.support_btn.bind(on_press=self.open_ble_channel)
         self.main_layout.add_widget(self.support_btn)
 

@@ -19,16 +19,14 @@ source.include_exts = py,png,jpg,jpeg,kv,atlas,ttf,json,txt,md
 version = 1.0.2
 
 # (int) Application version code (numeric)
-# این عدد برای اینکه بازار و مایکت فایل را به عنوان آپدیت قبول کنند بالا برده شد
 version.code = 3
 
 # (str) Icon of the application
-# اصلاح آدرس مستقیم آیکون بر اساس فایل ریشه گیت‌هاب شما
 icon.filename = icon.png
 
 # (list) Application requirements
-# حذف پکیج‌های بیودی و سیکس برای جلوگیری از کرش موتور متنی اندروید
-requirements = python3,kivy==2.2.1,arabic-reshaper,setuptools,wheel,pillow
+# اصلاح دقیق نام پکیج‌ها و همگام‌سازی نسخه‌ها با پایتون پایدار ۳.۱۰
+requirements = python3==3.10.0,kivy==2.3.0,arabic_reshaper,setuptools,wheel,pillow
 
 # (str) Supported orientations (valid options are: landscape, portrait or all)
 orientation = portrait
@@ -40,16 +38,17 @@ fullscreen = 0
 android.presplash_color = #FFFFFF
 
 # (list) Permissions
-android.permissions = INTERNET,READ_EXTERNAL_STORAGE,WRITE_EXTERNAL_STORAGE,ACCESS_NETWORK_STATE,VIBRATE,CHANGE_NETWORK_STATE
+# اصلاح مجوزها متناسب با استاندارد جدید گوگل‌پلی برای جلوگیری از کرش امنیتی
+android.permissions = INTERNET,ACCESS_NETWORK_STATE,VIBRATE
 
-# (int) Target Android API
-android.api = 34
+# (int) Target Android API (اصلاح به نسخه پایدار ۳۳ جهت هماهنگی کامل با کیوی و پایتون)
+android.api = 33
 
 # (int) Minimum API your APK will support.
 android.minapi = 21
 
-# (str) Android NDK version to use
-android.ndk = 27c
+# (str) Android NDK version to use (اصلاح به نسخه طلایی و پایدار ۲5c که با کیوی هیچ تداخلی ندارد)
+android.ndk = 25c
 
 # (int) Android NDK API to use
 android.ndk_api = 21
@@ -75,8 +74,8 @@ android.signing.keystore = tasbih-releser.keystore
 # (str) Alias name in your keystore
 android.signing.alias = tasbih-key
 
-# (str) python-for-android branch to use
-p4a.branch = v2024.01.21
+# (str) python-for-android branch to use (آزادسازی شاخه برای دانلود خودکار بهترین نسخه هماهنگ)
+p4a.branch = master
 
 [buildozer]
 

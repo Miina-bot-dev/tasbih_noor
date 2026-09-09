@@ -89,7 +89,7 @@ class GlassCard(BoxLayout):
         self.bind(minimum_height=self.setter("height"))
         with self.canvas.before:
             Color(0.12, 0.14, 0.22, 0.8)
-            self.bg = RoundedRectangle(radius=[25])
+            self.bg = RoundedRectangle(radius=[dp(25)])
         self.bind(pos=self._update_bg, size=self._update_bg)
     def _update_bg(self, *args):
         self.bg.pos = self.pos
@@ -109,7 +109,7 @@ class ModernBtn(Button):
         self.my_color = bg_color
         with self.canvas.before:
             Color(*self.my_color)
-            self.rect = RoundedRectangle(radius=[25])
+            self.rect = RoundedRectangle(radius=[dp(25)])
         self.bind(pos=self._update_rect, size=self._update_rect)
     def _update_rect(self, *args):
         self.rect.pos = self.pos
@@ -134,7 +134,6 @@ class FaLabel(Label):
         self.text = fa(text)
 class ZekrApp(App):
     def open_ble_channel(self, *args):
-        # باز کردن مستقیم کانال zekarnoor در اپلیکیشن بله گوشی کاربر
         try:
             webbrowser.open("bale://channel?name=zekarnoor")
         except:
@@ -200,9 +199,7 @@ class ZekrApp(App):
         btn_list.bind(on_press=self.open_zekr_list)
         self.main_layout.add_widget(btn_list)
 
-        # -------------------------------------------------------------
-        # کد اصلاحی و جایگزین شده درخواستی شما (بدون آسیب به بقیه اجزا)
-        # -------------------------------------------------------------
+        # دکمه حمایت کاملاً راست‌چین با سایز فونت ۱۸ درخواستی شما بدون تداخل فضا
         self.support_btn = Button(
             text=fa("لطفا از ما حمایت کنید") + "\n" + fa("امتیاز دادن و عضویت در کانال بله"),
             font_name="Vazir",
@@ -215,8 +212,6 @@ class ZekrApp(App):
             size_hint=(1, None),
             height=dp(55)
         )
-        
-        # اصلاح تراز متن برای راست‌چین شدن واقعی و اتصال به تابع بله
         self.support_btn.bind(size=lambda s, w: setattr(s, 'text_size', (w, None)))
         self.support_btn.bind(on_press=self.open_ble_channel)
         self.main_layout.add_widget(self.support_btn)

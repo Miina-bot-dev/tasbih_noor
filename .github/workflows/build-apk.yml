@@ -50,7 +50,7 @@ jobs:
           path: |
             ~/.buildozer
             .buildozer
-          key: ${{ runner.os }}-buildozer-${{ hashFiles('buildozer.spec') }}
+          key: ${{ runner.os }}-buildozer-${{ hashFiles('buildozer.spec') }}-v2
           restore-keys: |
             ${{ runner.os }}-buildozer-
 
@@ -80,6 +80,8 @@ jobs:
       - name: Build Official Release APK
         run: |
           rm -rf bin/
+          # حذف کش‌های توزیع‌های قدیمی پایتون برای جلوگیری از تداخل کدهای clang
+          buildozer android p4a -- clean_distributions
           # تغییر وضعیت به حالت ریلیز رسمی جهت هماهنگی با اندروید و اسکنر گوشی
           yes | buildozer android release
         env:
@@ -88,8 +90,8 @@ jobs:
       - name: Prepare Final Directory
         run: |
           mkdir -p bin/final
-          # پیدا کردن فایل ریلیز غیر امضا شده
-          APK=$(find bin -name "*-unsigned.apk" -o -name "*-release.apk" | sort -V | tail -1)
+          # پیدا کردن فایل ریلیز غیر امضا شده با ساختار جدید
+          APK=$(find bin -name "*.apk" | sort -V | tail -1)
           if [ -z "$APK" ]; then
             echo "ERROR: No Release APK found"
             exit 1

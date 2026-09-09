@@ -6,7 +6,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-22.04
-    timeout-minutes: 45
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
 
@@ -43,13 +43,25 @@ jobs:
           fi
           echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > tasbih-releser.keystore
 
+      - name: Cache buildozer
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.buildozer
+            .buildozer
+          key: ${{ runner.os }}-buildozer-${{ hashFiles('buildozer.spec') }}-v11
+          restore-keys: |
+            ${{ runner.os }}-buildozer-
+
       - name: Build Official Release APK
         run: |
           rm -rf bin/
-          # استفاده از دستور رسمی و اتوماتیک بیلدوزر بدون نیاز به تعامل سیستم
           buildozer android release --auto-accept-licenses
         env:
           BUILDOZER_WARN_ON_ROOT: 0
+          # کنترل دستی پروسس‌ها جهت جلوگیری از اشباع پردازنده و هنگ کردن سرور گیت‌هاب
+          MAKEFLAGS: "-j1"
+          EXTRA_CFLAGS: "-O0"
 
       - name: Prepare Final Directory
         run: |

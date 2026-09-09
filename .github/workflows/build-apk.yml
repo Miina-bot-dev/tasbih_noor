@@ -6,7 +6,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-22.04
-    timeout-minutes: 120
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
 
@@ -43,34 +43,11 @@ jobs:
           fi
           echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > tasbih-releser.keystore
 
-      # پذیرش لایسنس‌ها به صورت بومی بر روی سرور
-      - name: Accept Android Licenses
-        run: |
-          mkdir -p ~/.android
-          touch ~/.android/repositories.cfg
-          yes | "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --licenses || true
-
-      - name: Cache buildozer
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.buildozer
-            .buildozer
-          key: ${{ runner.os }}-buildozer-${{ hashFiles('buildozer.spec') }}-v9
-          restore-keys: |
-            ${{ runner.os }}-buildozer-
-
-      # دور زدن سرور خراب با دانلود مستقیم پکیج از گیت‌هاب رسمی پایتون برای اندروید
-      - name: Pre-download Bootstraps from GitHub Mirror
-        run: |
-          mkdir -p ~/.html
-          mkdir -p .buildozer/android/platform/python-for-android
-          git clone --depth 1 https://github.com .buildozer/android/platform/python-for-android || true
-
       - name: Build Official Release APK
         run: |
           rm -rf bin/
-          buildozer android release
+          # استفاده از دستور رسمی و اتوماتیک بیلدوزر بدون نیاز به تعامل سیستم
+          buildozer android release --auto-accept-licenses
         env:
           BUILDOZER_WARN_ON_ROOT: 0
 

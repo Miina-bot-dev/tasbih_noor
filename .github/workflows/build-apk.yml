@@ -21,7 +21,6 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      # تغییر سیستم‌عامل سرور به نسخه پایدارتر ۲۰.۰۴ جهت هماهنگی با کامپایلرهای قدیمی پایتون
       - name: Install system dependencies
         run: |
           sudo apt-get update
@@ -43,6 +42,7 @@ jobs:
             exit 1
           fi
           echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > tasbih-releser.keystore
+          ls -la tasbih-releser.keystore
 
       - name: Cache buildozer
         uses: actions/cache@v4
@@ -50,7 +50,7 @@ jobs:
           path: |
             ~/.buildozer
             .buildozer
-          key: ${{ runner.os }}-buildozer-clang-fixed-v99
+          key: ${{ runner.os }}-buildozer-clang-keystore-v101
           restore-keys: |
             ${{ runner.os }}-buildozer-
 
@@ -60,7 +60,46 @@ jobs:
           buildozer android release --auto-accept-licenses
         env:
           BUILDOZER_WARN_ON_ROOT: 0
-          # پچ حیاتی: مسدود کردن فلگ خراب کامپایلر پایتون در محیط اوبونتو
-          # این دو خط زیر دقیقا آپشن مخرب را در زمان کامپایل خنثی می‌کنند
           CFLAGS: "-Wno-error=unused-command-line-argument"
           CXXFLAGS: "-Wno-error=unused-command-line-argument"
+
+      - name: Prepare Final Directory
+        run: |
+          mkdir -p bin/final
+          APK=$(find bin -name "*.apk" | sort -V | tail -1)
+          if [ -z "$APK" ]; then
+            echo "ERROR: No Release APK found"
+            exit 1
+          fi
+          echo "Found APK for signing: $APK"
+          cp "$APK" bin/final/source-apk.apk
+
+      - name: Sign APK Officially
+        if: success()
+        env:
+          KEYSTORE_PASS: ${{ secrets.KEYSTORE_PASS }}
+          KEY_PASS: ${{ secrets.KEY_PASS }}
+        run: |
+          BUILD_TOOLS=$(find "$ANDROID_SDK_ROOT/build-tools" -maxdepth 1 -type d | sort -V | tail -1)
+          echo "Using build-tools: $BUILD_TOOLS"
+
+          "$BUILD_TOOLS/zipalign" -v -p 4 \
+            bin/final/source-apk.apk \
+            bin/final/aligned.apk
+
+          "$BUILD_TOOLS/apksigner" sign \
+            --ks tasbih-releser.keystore \
+            --ks-key-alias tasbih-key \
+            --ks-pass pass:"$KEYSTORE_PASS" \
+            --key-pass pass:"$KEY_PASS" \
+            --out bin/final/tasbih-signed.apk \
+            bin/final/aligned.apk
+
+          "$BUILD_TOOLS/apksigner" verify -v --print-certs bin/final/tasbih-signed.apk
+
+      - name: Upload APK
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Tasbih-Signed-APK
+          path: bin/final/tasbih-signed.apk

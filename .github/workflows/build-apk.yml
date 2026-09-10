@@ -5,7 +5,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-20.04
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
@@ -13,7 +13,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: '3.9'
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -21,13 +21,14 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
+      # تغییر سیستم‌عامل سرور به نسخه پایدارتر ۲۰.۰۴ جهت هماهنگی با کامپایلرهای قدیمی پایتون
       - name: Install system dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y \
             build-essential git zip unzip python3-pip \
             autoconf libtool pkg-config zlib1g-dev \
-            libncurses5-dev libncursesw5-dev libtinfo6 \
+            libncurses5-dev libncursesw5-dev libtinfo5 \
             cmake libffi-dev libssl-dev
 
       - name: Install buildozer
@@ -49,7 +50,7 @@ jobs:
           path: |
             ~/.buildozer
             .buildozer
-          key: ${{ runner.os }}-buildozer-claude-final-v2
+          key: ${{ runner.os }}-buildozer-clang-fixed-v99
           restore-keys: |
             ${{ runner.os }}-buildozer-
 
@@ -59,5 +60,7 @@ jobs:
           buildozer android release --auto-accept-licenses
         env:
           BUILDOZER_WARN_ON_ROOT: 0
-          # اضافه کردن متغیر کامپایل برای نادیده گرفتن فلگ‌های اشتباه لینوکس
-          CFLAGS: "-O2 -Wno-error"
+          # پچ حیاتی: مسدود کردن فلگ خراب کامپایلر پایتون در محیط اوبونتو
+          # این دو خط زیر دقیقا آپشن مخرب را در زمان کامپایل خنثی می‌کنند
+          CFLAGS: "-Wno-error=unused-command-line-argument"
+          CXXFLAGS: "-Wno-error=unused-command-line-argument"

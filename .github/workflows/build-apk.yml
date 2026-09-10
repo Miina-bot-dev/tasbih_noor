@@ -6,14 +6,14 @@ on:
 jobs:
   build:
     runs-on: ubuntu-22.04
-    timeout-minutes: 60
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
 
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: '3.9'
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -27,13 +27,13 @@ jobs:
           sudo apt-get install -y \
             build-essential git zip unzip python3-pip \
             autoconf libtool pkg-config zlib1g-dev \
-            libncurses5-dev libncursesw5-dev libtinfo5 \
+            libncurses5-dev libncursesw5-dev libtinfo6 \
             cmake libffi-dev libssl-dev
 
       - name: Install buildozer
         run: |
           pip install --upgrade pip setuptools wheel
-          pip install "cython==0.29.33" buildozer
+          pip install "cython<3.0.0" buildozer
 
       - name: Decode Keystore
         run: |
@@ -49,19 +49,17 @@ jobs:
           path: |
             ~/.buildozer
             .buildozer
-          key: ${{ runner.os }}-buildozer-${{ hashFiles('buildozer.spec') }}-v11
+          key: ${{ runner.os }}-buildozer-final-pure-60m
           restore-keys: |
             ${{ runner.os }}-buildozer-
 
       - name: Build Official Release APK
         run: |
           rm -rf bin/
+          # اجرای مستقیم با تایید اتوماتیک مجوزهای اندروید
           buildozer android release --auto-accept-licenses
         env:
           BUILDOZER_WARN_ON_ROOT: 0
-          # کنترل دستی پروسس‌ها جهت جلوگیری از اشباع پردازنده و هنگ کردن سرور گیت‌هاب
-          MAKEFLAGS: "-j1"
-          EXTRA_CFLAGS: "-O0"
 
       - name: Prepare Final Directory
         run: |
@@ -79,9 +77,19 @@ jobs:
           KEYSTORE_PASS: ${{ secrets.KEYSTORE_PASS }}
           KEY_PASS: ${{ secrets.KEY_PASS }}
         run: |
+          # ردیابی بومی مسیر ابزارها بر اساس توزیع اصلی سیستم‌عامل سرور
           BUILD_TOOLS=$(find "$ANDROID_SDK_ROOT/build-tools" -maxdepth 1 -type d | sort -V | tail -1)
+          echo "Using build-tools at: $BUILD_TOOLS"
+          
           "$BUILD_TOOLS/zipalign" -v -p 4 bin/final/source-apk.apk bin/final/aligned.apk
-          "$BUILD_TOOLS/apksigner" sign --ks tasbih-releser.keystore --ks-key-alias tasbih-key --ks-pass pass:"$KEYSTORE_PASS" --key-pass pass:"$KEY_PASS" --out bin/final/tasbih-signed.apk bin/final/aligned.apk
+          
+          "$BUILD_TOOLS/apksigner" sign \
+            --ks tasbih-releser.keystore \
+            --ks-key-alias tasbih-key \
+            --ks-pass pass:"$KEYSTORE_PASS" \
+            --key-pass pass:"$KEY_PASS" \
+            --out bin/final/tasbih-signed.apk \
+            bin/final/aligned.apk
 
       - name: Upload APK
         if: success()

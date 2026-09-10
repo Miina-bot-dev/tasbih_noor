@@ -6,14 +6,14 @@ on:
 jobs:
   build:
     runs-on: ubuntu-22.04
-    timeout-minutes: 40
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
 
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.9'
+          python-version: '3.10'
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -49,14 +49,13 @@ jobs:
           path: |
             ~/.buildozer
             .buildozer
-          key: ${{ runner.os }}-buildozer-final-pure-60m
+          key: ${{ runner.os }}-buildozer-claude-v1
           restore-keys: |
             ${{ runner.os }}-buildozer-
 
       - name: Build Official Release APK
         run: |
           rm -rf bin/
-          # اجرای مستقیم با تایید اتوماتیک مجوزهای اندروید
           buildozer android release --auto-accept-licenses
         env:
           BUILDOZER_WARN_ON_ROOT: 0
@@ -77,19 +76,9 @@ jobs:
           KEYSTORE_PASS: ${{ secrets.KEYSTORE_PASS }}
           KEY_PASS: ${{ secrets.KEY_PASS }}
         run: |
-          # ردیابی بومی مسیر ابزارها بر اساس توزیع اصلی سیستم‌عامل سرور
           BUILD_TOOLS=$(find "$ANDROID_SDK_ROOT/build-tools" -maxdepth 1 -type d | sort -V | tail -1)
-          echo "Using build-tools at: $BUILD_TOOLS"
-          
           "$BUILD_TOOLS/zipalign" -v -p 4 bin/final/source-apk.apk bin/final/aligned.apk
-          
-          "$BUILD_TOOLS/apksigner" sign \
-            --ks tasbih-releser.keystore \
-            --ks-key-alias tasbih-key \
-            --ks-pass pass:"$KEYSTORE_PASS" \
-            --key-pass pass:"$KEY_PASS" \
-            --out bin/final/tasbih-signed.apk \
-            bin/final/aligned.apk
+          "$BUILD_TOOLS/apksigner" sign --ks tasbih-releser.keystore --ks-key-alias tasbih-key --ks-pass pass:"$KEYSTORE_PASS" --key-pass pass:"$KEY_PASS" --out bin/final/tasbih-signed.apk bin/final/aligned.apk
 
       - name: Upload APK
         if: success()

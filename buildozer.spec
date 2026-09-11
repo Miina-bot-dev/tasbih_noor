@@ -4,8 +4,8 @@ package.name = tasbihnoor
 package.domain = com.tasbihnoor.app
 source.dir = .
 source.include_exts = py,png,jpg,jpeg,kv,atlas,ttf,json,txt,md
-version = 1.0.2
-version.code = 3
+version = 1.0.3
+version.code = 4
 icon.filename = icon.png
 
 # 🔒 قفل کردن نسخه پایتون روی ۳.۱۰ جهت هماهنگی کامل با کامپایلر اندروید

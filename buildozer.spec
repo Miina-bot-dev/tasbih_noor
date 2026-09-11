@@ -8,8 +8,8 @@ version = 1.0.2
 version.code = 3
 icon.filename = icon.png
 
-# اصلاح کلیدی کلود: اضافه شدن hostpython3 جهت شکستن لوپ فریز کامپایلر
-requirements = hostpython3,python3,kivy==2.2.1,arabic-reshaper,setuptools,wheel,pillow
+# 🔒 قفل کردن نسخه پایتون روی ۳.۱۰ جهت هماهنگی کامل با کامپایلر اندروید
+requirements = hostpython3,python3==3.10.11,kivy==2.2.1,arabic-reshaper,setuptools,wheel,pillow
 
 orientation = portrait
 fullscreen = 0

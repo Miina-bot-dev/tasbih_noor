@@ -8,8 +8,8 @@ version = 1.0.3
 version.code = 4
 icon.filename = icon.png
 
-# 🔒 قفل کردن نسخه پایتون روی ۳.۱۰ جهت هماهنگی کامل با کامپایلر اندروید
-requirements = hostpython3,python3==3.10.11,kivy==2.2.1,arabic-reshaper,setuptools,wheel,pillow
+# نیازمندی‌های استاندارد و هماهنگ با پچ رسمی
+requirements = hostpython3,python3,kivy==2.2.1,arabic-reshaper,setuptools,wheel,pillow
 
 orientation = portrait
 fullscreen = 0
@@ -19,14 +19,19 @@ android.api = 33
 android.minapi = 21
 android.ndk = 25c
 android.ndk_api = 21
+
+# قفل روی تک‌معماری ۶۴ بیتی جهت کاهش ۱۰۰٪ بار سرور گیت‌هاب
 android.archs = arm64-v8a
+
 android.accept_sdk_license = True
 android.allow_backup = False
 android.release_artifact = apk
 android.debuggable = 0
 android.signing.keystore = tasbih-releser.keystore
 android.signing.alias = tasbih-key
-p4a.branch = master
+
+# پچ طلایی: استفاده از برنچ فوق‌پایدار و رسمی پایتون برای اندروید جهت دور زدن خطای Clang
+p4a.branch = release-2024.01.21
 
 [buildozer]
 log_level = 2

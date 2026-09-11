@@ -5,7 +5,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
@@ -27,7 +27,7 @@ jobs:
           sudo apt-get install -y \
             build-essential git zip unzip python3-pip \
             autoconf libtool pkg-config zlib1g-dev \
-            libncurses-dev libtinfo6 \
+            libncurses5-dev libncursesw5-dev libtinfo5 \
             cmake libffi-dev libssl-dev
 
       - name: Install buildozer
@@ -50,7 +50,7 @@ jobs:
           path: |
             ~/.buildozer
             .buildozer
-          key: ${{ runner.os }}-buildozer-noble-fix-v1
+          key: ${{ runner.os }}-buildozer-final-fixed-v1
           restore-keys: |
             ${{ runner.os }}-buildozer-
 

@@ -62,6 +62,7 @@ jobs:
           BUILDOZER_WARN_ON_ROOT: 0
           CFLAGS: "-Wno-error=unused-command-line-argument"
           CXXFLAGS: "-Wno-error=unused-command-line-argument"
+          PYTHONHTTPSVERIFY: 1
 
       - name: Prepare Final Directory
         run: |

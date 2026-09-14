@@ -60,7 +60,7 @@ jobs:
       - name: Build Official Release APK
         run: |
           rm -rf bin/
-          
+
           # اضافه کردن مکانیزم تکرار خودکار تا ۴ بار در صورت قطعی اینترنت سرور
           for i in {1..4}; do
             echo "Attempt $i: Running Buildozer..."
@@ -71,7 +71,7 @@ jobs:
             echo "Build failed or network interrupted. Retrying in 15 seconds..."
             sleep 15
           done
-          
+
           echo "ERROR: Build failed after 4 attempts due to network issues."
           exit 1
         env:
@@ -91,8 +91,8 @@ jobs:
       - name: Sign APK Officially
         if: success()
         env:
-          KEYSTORE_PASS: ${{ secrets.KEYSTORE_PASSWORD }}
-          KEY_PASS: ${{ secrets.KEY_PASSWORD }}
+          KEYSTORE_PASS: ${{ secrets.KEYSTORE_PASS }}
+          KEY_PASS: ${{ secrets.KEY_PASS }}
         run: |
           BUILD_TOOLS=$(find $ANDROID_HOME/build-tools -maxdepth 1 -mindepth 1 -type d | sort -V | tail -1)
           "$BUILD_TOOLS/zipalign" -v -p 4 bin/final/source-apk.apk bin/final/aligned.apk

@@ -4,41 +4,29 @@ package.name = tasbihnoor
 package.domain = com.tasbihnoor.app
 source.dir = .
 source.include_exts = py,png,jpg,jpeg,kv,atlas,ttf,json,txt,md
-# نسخه را نسبت به انتشار قبلی خود چک کنید؛ در حال حاضر روی ۱.۰.۳ تنظیم شده
 version = 1.0.3
 version.code = 4
+icon.filename = icon.png
 
-# 🖼️ بخش آیکون: مطمئن شوید فایلی به نام icon.png با ابعاد 512x512 در کنار main.py وجود دارد
-icon.filename = %(source.dir)s/icon.png
-
-# 📚 نیازمندی‌ها: برای جلوگیری از تداخل، اجازه دهید بیلدوزر بهترین نسخه پایتون را خودش انتخاب کند
-requirements = python3,kivy==2.2.1,arabic-reshaper,pillow,setuptools
+requirements = python3,kivy==2.2.1,arabic-reshaper,setuptools
 
 orientation = portrait
 fullscreen = 0
 android.presplash_color = #FFFFFF
-
-# ⚠️ مجوزها: دسترسی‌های اضافی که مارکت‌ها روی آن حساس هستند و خطای ناامن می‌دهند حذف شدند
-android.permissions = INTERNET,VIBRATE,ACCESS_NETWORK_STATE
-
-# 🔐 سازگاری کامل با اندرویدهای جدید (رفع خطای ناسازگاری بازار و گوگل‌پلی)
-android.api = 34
+android.permissions = INTERNET,ACCESS_NETWORK_STATE,VIBRATE
+android.api = 33
 android.minapi = 21
-android.ndk = 25b
+android.ndk = 25c
 android.ndk_api = 21
-android.archs = arm64-v8a,armeabi-v7a
+# هر دو معماری تا رو همهٔ گوشی‌ها (32 و 64 بیتی) نصب بشه
+android.archs = arm64-v8a, armeabi-v7a
 android.accept_sdk_license = True
 android.allow_backup = False
 android.release_artifact = apk
-
-# 🛠️ تنظیمات امضای تجاری برای بازار و مایکت (توکن‌های گیت‌هاب اکشنز)
 android.debuggable = 0
-android.keystore = %(source.dir)s/tasbih-releser.keystore
-android.keystore.password = ${{ secrets.KEYSTORE_PASSWORD }}
-android.keyalias = tasbih-key
-android.keyalias.password = ${{ secrets.KEY_PASSWORD }}
-
-p4a.branch = release-2024.01.21
+android.signing.keystore = tasbih-releser.keystore
+android.signing.alias = tasbih-key
+p4a.branch = master
 
 [buildozer]
 log_level = 2

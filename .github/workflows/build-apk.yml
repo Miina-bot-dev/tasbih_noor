@@ -51,9 +51,9 @@ jobs:
             ~/.buildozer
             .buildozer
             ~/.android
-          key: ${{ runner.os }}-buildozer-v2-${{ hashFiles('buildozer.spec') }}
+          key: ${{ runner.os }}-buildozer-v3-${{ hashFiles('buildozer.spec') }}
           restore-keys: |
-            ${{ runner.os }}-buildozer-v2-
+            ${{ runner.os }}-buildozer-v3-
             ${{ runner.os }}-buildozer-
 
       # 🔄 اجرای هوشمند بیلدوزر با قابلیت تکرار در صورت خطای شبکه
@@ -76,8 +76,6 @@ jobs:
           exit 1
         env:
           BUILDOZER_WARN_ON_ROOT: 0
-          CFLAGS: "-Wno-error=unused-command-line-argument"
-          CXXFLAGS: "-Wno-error=unused-command-line-argument"
           PYTHONHTTPSVERIFY: 1
 
       - name: Prepare Final Directory

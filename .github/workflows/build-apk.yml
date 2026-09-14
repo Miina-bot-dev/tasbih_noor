@@ -66,7 +66,8 @@ jobs:
       - name: Prepare Final Directory
         run: |
           mkdir -p bin/final
-          APK=$(find bin -name "*.apk" | sort -V | tail -1)
+          # 🚨 اصلاح مهم ۱: بیلدوزر فایل را در پوشه bin می‌سازد، مسیر جستجو دقیق‌تر شد
+          APK=$(find bin -name "*.apk" | grep -v "final" | sort -V | tail -1)
           if [ -z "$APK" ]; then
             echo "ERROR: No Release APK found"
             exit 1
@@ -76,10 +77,12 @@ jobs:
       - name: Sign APK Officially
         if: success()
         env:
-          KEYSTORE_PASS: ${{ secrets.KEYSTORE_PASS }}
-          KEY_PASS: ${{ secrets.KEY_PASS }}
+          # 🚨 اصلاح مهم ۲: هماهنگ کردن نام سکرت‌ها با بدنه اسکریپت
+          KEYSTORE_PASS: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_PASS: ${{ secrets.KEY_PASSWORD }}
         run: |
-          BUILD_TOOLS=$(find "$ANDROID_SDK_ROOT/build-tools" -maxdepth 1 -type d | sort -V | tail -1)
+          # 🚨 اصلاح مهم ۳: آدرس‌دهی دقیق به Build Tools اندروید در گیت‌هاب
+          BUILD_TOOLS=$(find $ANDROID_HOME/build-tools -maxdepth 1 -mindepth 1 -type d | sort -V | tail -1)
           "$BUILD_TOOLS/zipalign" -v -p 4 bin/final/source-apk.apk bin/final/aligned.apk
           "$BUILD_TOOLS/apksigner" sign --ks tasbih-releser.keystore --ks-key-alias tasbih-key --ks-pass pass:"$KEYSTORE_PASS" --key-pass pass:"$KEY_PASS" --out bin/final/tasbih-signed.apk bin/final/aligned.apk
 

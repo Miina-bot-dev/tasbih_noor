@@ -21,13 +21,12 @@ android.ndk_api = 21
 # هر دو معماری تا رو همهٔ گوشی‌ها (32 و 64 بیتی) نصب بشه
 android.archs = arm64-v8a, armeabi-v7a
 android.accept_sdk_license = True
-android.skip_update = False
 android.allow_backup = False
 android.release_artifact = apk
 android.debuggable = 0
 android.signing.keystore = tasbih-releser.keystore
 android.signing.alias = tasbih-key
-p4a.branch = master
+p4a.branch = release-2024.01.21
 
 [buildozer]
 log_level = 2

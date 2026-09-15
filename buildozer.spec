@@ -12,8 +12,10 @@ requirements = python3,kivy==2.3.0,arabic-reshaper,setuptools
 
 orientation = portrait
 fullscreen = 0
+android.presplash = True
 android.presplash_color = #FFFFFF
-android.permissions = INTERNET,ACCESS_NETWORK_STATE,VIBRATE
+android.permissions = INTERNET,ACCESS_NETWORK_STATE,VIBRATE,CHANGE_NETWORK_STATE
+android.enforce_ssl_verification = True
 
 # ارتقا به اندروید ۱۴ برای حل مشکل سپر ایمنی و گوشی‌های جدید
 android.api = 34
@@ -27,10 +29,14 @@ android.accept_sdk_license = True
 android.allow_backup = False
 android.release_artifact = apk
 android.debuggable = 0
+android.enable_proguard = True
 
-# تنظیمات کلید امضا
-android.signing.keystore = tasbih-releser.keystore
+# تنظیمات کل��د امضا
+android.signing.keystore = tasbih-release.keystore
 android.signing.alias = tasbih-key
+
+# Security metadata for Play Protect compliance
+android.meta_data = com.google.android.gms.version=@integer/google_play_services_version
 
 # ارتقا به نسخه پایدار پایتون برای اندروید جهت هماهنگی با اندروید ۱۴
 p4a.branch = release-2024.01.21

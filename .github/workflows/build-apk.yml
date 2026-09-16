@@ -1,9 +1,6 @@
 name: Build Official Signed APK
 
 on:
-  push:
-    branches:
-      - main
   workflow_dispatch:
 
 jobs:
@@ -45,11 +42,6 @@ jobs:
             exit 1
           fi
           echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > tasbih-releser.keystore
-
-      - name: Relax strict compiler warning for old bundled C sources
-        run: |
-          echo "CFLAGS=-Wno-error=cast-function-type-strict -Wno-implicit-function-declaration -Wno-int-conversion -Wno-error" >> $GITHUB_ENV
-          echo "CXXFLAGS=-Wno-error=cast-function-type-strict -Wno-implicit-function-declaration -Wno-int-conversion -Wno-error" >> $GITHUB_ENV
 
       # 📁 تقویت سیستم کش برای دور زدن قطعی‌های مکرر شبکه
       - name: Cache Android SDK and Buildozer

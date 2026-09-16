@@ -4,17 +4,22 @@ package.name = tasbihnoor
 package.domain = com.tasbihnoor.app
 source.dir = .
 source.include_exts = py,png,jpg,jpeg,kv,atlas,ttf,json,txt,md
-version = 1.0.3
-version.code = 4
+
+# ارتقای نسخه برای اعمال به عنوان به‌روزرسانی معتبر
+version = 1.0.4
+version.code = 5
 icon.filename = icon.png
 
-# نیازمندی‌های استاندارد، تمیز و بدون ایجاد تداخل در بیلدوزر
+# نیازمندی‌های استاندارد پایتون برای اندروید
 requirements = python3,kivy==2.2.1,arabic-reshaper,setuptools,pillow
 
 orientation = portrait
 fullscreen = 0
 android.presplash_color = #FFFFFF
-android.permissions = INTERNET,READ_EXTERNAL_STORAGE,WRITE_EXTERNAL_STORAGE,ACCESS_NETWORK_STATE,VIBRATE,CHANGE_NETWORK_STATE
+
+# حذف پرمیشن‌های حساس شبکه و حافظه جهت رفع اخطار گوگل
+android.permissions = INTERNET,VIBRATE
+
 android.api = 33
 android.minapi = 21
 android.ndk = 25c
@@ -27,10 +32,13 @@ android.accept_sdk_license = True
 android.allow_backup = False
 android.release_artifact = apk
 android.debuggable = 0
-android.signing.keystore = tasbih-releser.keystore
-android.signing.alias = tasbih-key
 
-# پچ طلایی: استفاده از برنچ فوق‌پایدار و رسمی پایتون برای اندروید
+# 🌟 پچ طلایی: حذف خطوط امضای مستقیم در بیلدوزر برای جلوگیری از تداخل با امضای گیت‌هاب
+# این کار باعث می‌شود بیلدوزر فایل خام بسازد و فایل yml شما آن را به صورت استاندارد امضا کند
+android.signing.keystore = 
+android.signing.alias = 
+
+# استفاده از برنچ پایدار پایتون برای اندروید
 p4a.branch = release-2024.01.21
 
 [buildozer]

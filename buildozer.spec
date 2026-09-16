@@ -8,8 +8,8 @@ version = 1.0.3
 version.code = 4
 icon.filename = icon.png
 
-# نیازمندی‌های استاندارد و هماهنگ با پچ رسمی
-requirements = hostpython3,python3,kivy==2.2.1,arabic-reshaper,setuptools,wheel,pillow
+# نیازمندی‌های استاندارد، تمیز و بدون ایجاد تداخل در بیلدوزر
+requirements = python3,kivy==2.2.1,arabic-reshaper,setuptools,pillow
 
 orientation = portrait
 fullscreen = 0
@@ -20,7 +20,7 @@ android.minapi = 21
 android.ndk = 25c
 android.ndk_api = 21
 
-# قفل روی تک‌معماری ۶۴ بیتی جهت کاهش ۱۰۰٪ بار سرور گیت‌هاب
+# قفل روی تک‌معماری ۶۴ بیتی جهت افزایش سرعت بیلد
 android.archs = arm64-v8a
 
 android.accept_sdk_license = True
@@ -30,7 +30,7 @@ android.debuggable = 0
 android.signing.keystore = tasbih-releser.keystore
 android.signing.alias = tasbih-key
 
-# پچ طلایی: استفاده از برنچ فوق‌پایدار و رسمی پایتون برای اندروید جهت دور زدن خطای Clang
+# پچ طلایی: استفاده از برنچ فوق‌پایدار و رسمی پایتون برای اندروید
 p4a.branch = release-2024.01.21
 
 [buildozer]

@@ -45,9 +45,10 @@ jobs:
 
       - name: Relax strict compiler warning for old bundled C sources
         run: |
-          echo "CFLAGS=-Wno-error" >> $GITHUB_ENV
-          echo "CXXFLAGS=-Wno-error" >> $GITHUB_ENV
+          echo "CFLAGS=-Wno-error=cast-function-type-strict" >> $GITHUB_ENV
+          echo "CXXFLAGS=-Wno-error=cast-function-type-strict" >> $GITHUB_ENV
 
+      # 📁 تقویت سیستم کش برای دور زدن قطعی‌های مکرر شبکه
       - name: Cache Android SDK and Buildozer
         uses: actions/cache@v4
         with:
@@ -60,10 +61,12 @@ jobs:
             ${{ runner.os }}-buildozer-v3-
             ${{ runner.os }}-buildozer-
 
+      # 🔄 اجرای هوشمند بیلدوزر با قابلیت تکرار در صورت خطای شبکه
       - name: Build Official Release APK
         run: |
           rm -rf bin/
 
+          # اضافه کردن مکانیزم تکرار خودکار تا ۴ بار در صورت قطعی اینترنت سرور
           for i in {1..4}; do
             echo "Attempt $i: Running Buildozer..."
             if buildozer android release --auto-accept-licenses; then
@@ -105,4 +108,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Tasbih-Signed-APK
+          path: bin/final/tasbih-signed.apk          name: Tasbih-Signed-APK
           path: bin/final/tasbih-signed.apk

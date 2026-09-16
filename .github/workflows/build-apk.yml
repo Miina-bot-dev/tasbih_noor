@@ -1,6 +1,9 @@
 name: Build Official Signed APK
 
 on:
+  push:
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
@@ -45,8 +48,8 @@ jobs:
 
       - name: Relax strict compiler warning for old bundled C sources
         run: |
-          echo "CFLAGS=-Wno-error=cast-function-type-strict" >> $GITHUB_ENV
-          echo "CXXFLAGS=-Wno-error=cast-function-type-strict" >> $GITHUB_ENV
+          echo "CFLAGS=-Wno-error=cast-function-type-strict -Wno-implicit-function-declaration -Wno-int-conversion -Wno-error" >> $GITHUB_ENV
+          echo "CXXFLAGS=-Wno-error=cast-function-type-strict -Wno-implicit-function-declaration -Wno-int-conversion -Wno-error" >> $GITHUB_ENV
 
       # 📁 تقویت سیستم کش برای دور زدن قطعی‌های مکرر شبکه
       - name: Cache Android SDK and Buildozer
@@ -108,5 +111,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Tasbih-Signed-APK
-          path: bin/final/tasbih-signed.apk          name: Tasbih-Signed-APK
           path: bin/final/tasbih-signed.apk

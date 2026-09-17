@@ -43,7 +43,11 @@ jobs:
           fi
           echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > tasbih-releser.keystore
 
-      # 📁 تقویت سیستم کش برای دور زدن قطعی‌های مکرر شبکه
+      - name: Relax strict compiler warning for old bundled C sources
+        run: |
+          echo "CFLAGS=-Wno-error" >> $GITHUB_ENV
+          echo "CXXFLAGS=-Wno-error" >> $GITHUB_ENV
+
       - name: Cache Android SDK and Buildozer
         uses: actions/cache@v4
         with:
@@ -51,19 +55,18 @@ jobs:
             ~/.buildozer
             .buildozer
             ~/.android
-          key: ${{ runner.os }}-buildozer-v3-${{ hashFiles('buildozer.spec') }}
-          restore-keys: |
-            ${{ runner.os }}-buildozer-v3-
-            ${{ runner.os }}-buildozer-
+          key: ${{ runner.os }}-buildozer-v4-${{ hashFiles('buildozer.spec') }}
 
-      # 🔄 اجرای هوشمند بیلدوزر با قابلیت تکرار در صورت خطای شبکه
       - name: Build Official Release APK
         run: |
           rm -rf bin/
 
-          # اضافه کردن مکانیزم تکرار خودکار تا ۴ بار در صورت قطعی اینترنت سرور
           for i in {1..4}; do
             echo "Attempt $i: Running Buildozer..."
+            if [ $i -gt 1 ]; then
+              echo "Cleaning stale project build dir before retry..."
+              rm -rf .buildozer/android/platform/build-*
+            fi
             if buildozer android release --auto-accept-licenses; then
               echo "Build Succeeded!"
               exit 0

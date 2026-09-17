@@ -5,7 +5,7 @@ package.domain = com.tasbihnoor.app
 source.dir = .
 source.include_exts = py,png,jpg,jpeg,kv,atlas,ttf,json,txt,md
 version = 1.0.3
-version.code = 11
+version.code = 12
 icon.filename = icon.png
 
 requirements = python3,kivy==2.2.1,arabic-reshaper,setuptools
@@ -14,9 +14,9 @@ orientation = portrait
 fullscreen = 0
 android.presplash_color = #FFFFFF
 android.permissions = INTERNET,ACCESS_NETWORK_STATE,VIBRATE
-android.api = 33
+android.api = 34
 android.minapi = 21
-android.ndk = 25c
+android.ndk = 25b
 android.ndk_api = 21
 android.archs = arm64-v8a, armeabi-v7a
 android.accept_sdk_license = True
@@ -25,7 +25,6 @@ android.release_artifact = apk
 android.debuggable = 0
 android.signing.keystore = tasbih-releser.keystore
 android.signing.alias = tasbih-key
-p4a.branch = release-2024.01.21
 
 [buildozer]
 log_level = 2

@@ -8,7 +8,7 @@ version = 1.0.3
 version.code = 12
 icon.filename = icon.png
 
-requirements = python3,kivy==2.2.1,arabic-reshaper,setuptools
+requirements = python3==3.11.6,hostpython3==3.11.6,kivy==2.2.1,arabic-reshaper,setuptools
 
 orientation = portrait
 fullscreen = 0

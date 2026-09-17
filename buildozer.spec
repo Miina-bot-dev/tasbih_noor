@@ -4,34 +4,28 @@ package.name = tasbihnoor
 package.domain = com.tasbihnoor.app
 source.dir = .
 source.include_exts = py,png,jpg,jpeg,kv,atlas,ttf,json,txt,md
-version = 1.0.4
-version.code = 5
+version = 1.0.3
+version.code = 10
 icon.filename = icon.png
 
-requirements = python3,kivy==2.2.1,arabic-reshaper,setuptools,pillow
+requirements = python3==3.11.6,hostpython3==3.11.6,kivy==2.3.1,arabic-reshaper,setuptools
 
 orientation = portrait
 fullscreen = 0
 android.presplash_color = #FFFFFF
-
-# پچ نهایی رفع هشدار گوگل: فقط دسترسی لرزش و اینترنت ساده بدون پایش وضعیت شبکه
-android.permissions = INTERNET,VIBRATE
-
-android.api = 33
+android.permissions = INTERNET,ACCESS_NETWORK_STATE,VIBRATE
+android.api = 34
 android.minapi = 21
 android.ndk = 25c
 android.ndk_api = 21
-android.archs = arm64-v8a
+android.archs = arm64-v8a, armeabi-v7a
 android.accept_sdk_license = True
 android.allow_backup = False
 android.release_artifact = apk
 android.debuggable = 0
-
-# سپردن امضا به عهده گیت‌هاب برای جلوگیری از تداخل ساختاری امضاها
-android.signing.keystore = 
-android.signing.alias = 
-
-p4a.branch = release-2024.01.21
+android.signing.keystore = tasbih-releser.keystore
+android.signing.alias = tasbih-key
+p4a.branch = master
 
 [buildozer]
 log_level = 2

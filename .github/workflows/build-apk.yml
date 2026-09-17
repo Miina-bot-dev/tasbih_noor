@@ -1,9 +1,6 @@
 name: Build Official Signed APK
 
 on:
-  push:
-    branches:
-      - main
   workflow_dispatch:
 
 jobs:
@@ -16,7 +13,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.9'
+          python-version: '3.10'
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -40,13 +37,13 @@ jobs:
 
       - name: Decode Keystore
         run: |
+          if [ -z "${{ secrets.KEYSTORE_BASE64 }}" ]; then
+            echo "ERROR: KEYSTORE_BASE64 secret is not set!"
+            exit 1
+          fi
           echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > tasbih-releser.keystore
 
-      - name: Relax strict compiler warning for old bundled C sources
-        run: |
-          echo "CFLAGS=-Wno-error=cast-function-type-strict -Wno-implicit-function-declaration -Wno-int-conversion -Wno-error" >> $GITHUB_ENV
-          echo "CXXFLAGS=-Wno-error=cast-function-type-strict -Wno-implicit-function-declaration -Wno-int-conversion -Wno-error" >> $GITHUB_ENV
-
+      # 📁 تقویت سیستم کش برای دور زدن قطعی‌های مکرر شبکه
       - name: Cache Android SDK and Buildozer
         uses: actions/cache@v4
         with:
@@ -57,11 +54,26 @@ jobs:
           key: ${{ runner.os }}-buildozer-v3-${{ hashFiles('buildozer.spec') }}
           restore-keys: |
             ${{ runner.os }}-buildozer-v3-
+            ${{ runner.os }}-buildozer-
 
+      # 🔄 اجرای هوشمند بیلدوزر با قابلیت تکرار در صورت خطای شبکه
       - name: Build Official Release APK
         run: |
           rm -rf bin/
-          buildozer android release --auto-accept-licenses
+
+          # اضافه کردن مکانیزم تکرار خودکار تا ۴ بار در صورت قطعی اینترنت سرور
+          for i in {1..4}; do
+            echo "Attempt $i: Running Buildozer..."
+            if buildozer android release --auto-accept-licenses; then
+              echo "Build Succeeded!"
+              exit 0
+            fi
+            echo "Build failed or network interrupted. Retrying in 15 seconds..."
+            sleep 15
+          done
+
+          echo "ERROR: Build failed after 4 attempts due to network issues."
+          exit 1
         env:
           BUILDOZER_WARN_ON_ROOT: 0
           PYTHONHTTPSVERIFY: 1
@@ -70,9 +82,14 @@ jobs:
         run: |
           mkdir -p bin/final
           APK=$(find bin -name "*.apk" | grep -v "final" | sort -V | tail -1)
+          if [ -z "$APK" ]; then
+            echo "ERROR: No Release APK found"
+            exit 1
+          fi
           cp "$APK" bin/final/source-apk.apk
 
       - name: Sign APK Officially
+        if: success()
         env:
           KEYSTORE_PASS: ${{ secrets.KEYSTORE_PASS }}
           KEY_PASS: ${{ secrets.KEY_PASS }}
@@ -82,6 +99,7 @@ jobs:
           "$BUILD_TOOLS/apksigner" sign --ks tasbih-releser.keystore --ks-key-alias tasbih-key --ks-pass pass:"$KEYSTORE_PASS" --key-pass pass:"$KEY_PASS" --out bin/final/tasbih-signed.apk bin/final/aligned.apk
 
       - name: Upload APK
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: Tasbih-Signed-APK

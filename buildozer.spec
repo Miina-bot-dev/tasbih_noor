@@ -4,8 +4,8 @@ package.name = tasbihnoor
 package.domain = com.tasbihnoor.app
 source.dir = .
 source.include_exts = py,png,jpg,jpeg,kv,atlas,ttf,json,txt,md
-version = 1.0.1
-version.code = 2
+version = 1.0.2
+version.code = 3
 requirements = python3,kivy==2.2.1,arabic-reshaper,python-bidi,setuptools,wheel,six,pillow
 
 icon.filename = %(source.dir)s/icon.png

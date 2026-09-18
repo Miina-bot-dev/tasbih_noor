@@ -8,6 +8,8 @@ version = 1.0.1
 version.code = 2
 requirements = python3,kivy==2.2.1,arabic-reshaper,python-bidi,setuptools,wheel,six,pillow
 
+icon.filename = %(source.dir)s/icon.png
+
 orientation = portrait
 fullscreen = 0
 

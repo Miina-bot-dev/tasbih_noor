@@ -1,7 +1,7 @@
 [app]
 title = Tasbih Noor
 package.name = tasbihnoor
-package.domain = com.tasbihnoor.app
+package.domain = com.mina
 source.dir = .
 source.include_exts = py,png,jpg,jpeg,kv,atlas,ttf,json,txt,md
 version = 1.0.2

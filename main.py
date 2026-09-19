@@ -356,29 +356,11 @@ class ZekrApp(App):
             webbrowser.open(target_url)
 
     def open_rate(self, *args):
-        # بسته به مارکتی که اپ ازش نصب شده، لینک امتیازدهی مناسب همون مارکت باز میشه
-        # (باز کردن لینک مارکت دیگه داخل اپ توسط مایکت مجاز نیست)
+        # این نسخه فقط برای مایکت منتشر میشه، پس همیشه لینک امتیازدهی مایکت باز میشه
         package_name = "com.mina.tasbihnoor"
+        target_url = f"https://myket.ir/app/{package_name}"
+
         from kivy.utils import platform
-        installer = None
-
-        if platform == 'android':
-            try:
-                from jnius import autoclass
-                PythonActivity = autoclass('org.kivy.android.PythonActivity')
-                context = PythonActivity.mActivity
-                installer = context.getPackageManager().getInstallerPackageName(context.getPackageName())
-            except Exception:
-                installer = None
-
-        if installer == 'ir.mservices.market':
-            target_url = f"https://myket.ir/app/{package_name}"
-        elif installer == 'com.farsitel.bazaar':
-            target_url = f"https://cafebazaar.ir/app/{package_name}"
-        else:
-            # اگه مارکت نصب‌کننده مشخص نبود (مثلاً نصب مستقیم APK)، بازار پیش‌فرض
-            target_url = f"https://cafebazaar.ir/app/{package_name}"
-
         if platform == 'android':
             try:
                 from jnius import autoclass

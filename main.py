@@ -356,8 +356,41 @@ class ZekrApp(App):
             webbrowser.open(target_url)
 
     def open_rate(self, *args):
-        # لینک امتیازدهی به اپلیکیشن - با لینک واقعی صفحه‌ات در بازار/مایکت جایگزین کن
-        webbrowser.open("https://cafebazaar.ir/app/YOUR_PACKAGE_NAME")
+        # بسته به مارکتی که اپ ازش نصب شده، لینک امتیازدهی مناسب همون مارکت باز میشه
+        # (باز کردن لینک مارکت دیگه داخل اپ توسط مایکت مجاز نیست)
+        package_name = "com.mina.tasbihnoor"
+        from kivy.utils import platform
+        installer = None
+
+        if platform == 'android':
+            try:
+                from jnius import autoclass
+                PythonActivity = autoclass('org.kivy.android.PythonActivity')
+                context = PythonActivity.mActivity
+                installer = context.getPackageManager().getInstallerPackageName(context.getPackageName())
+            except Exception:
+                installer = None
+
+        if installer == 'ir.mservices.market':
+            target_url = f"https://myket.ir/app/{package_name}"
+        elif installer == 'com.farsitel.bazaar':
+            target_url = f"https://cafebazaar.ir/app/{package_name}"
+        else:
+            # اگه مارکت نصب‌کننده مشخص نبود (مثلاً نصب مستقیم APK)، بازار پیش‌فرض
+            target_url = f"https://cafebazaar.ir/app/{package_name}"
+
+        if platform == 'android':
+            try:
+                from jnius import autoclass
+                PythonActivity = autoclass('org.kivy.android.PythonActivity')
+                Intent = autoclass('android.content.Intent')
+                Uri = autoclass('android.net.Uri')
+                intent = Intent(Intent.ACTION_VIEW, Uri.parse(target_url))
+                PythonActivity.mActivity.startActivity(intent)
+            except Exception:
+                webbrowser.open(target_url)
+        else:
+            webbrowser.open(target_url)
 
     def open_zekr_list(self, *args):
         content = BoxLayout(orientation="vertical", padding=dp(10), spacing=dp(10))

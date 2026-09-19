@@ -4,8 +4,8 @@ package.name = tasbihnoor
 package.domain = com.mina
 source.dir = .
 source.include_exts = py,png,jpg,jpeg,kv,atlas,ttf,json,txt,md
-version = 1.0.2
-version.code = 3
+version = 1.0.3
+version.code = 4
 requirements = python3,kivy==2.2.1,arabic-reshaper,python-bidi,setuptools,wheel,six,pillow
 
 icon.filename = %(source.dir)s/icon.png
